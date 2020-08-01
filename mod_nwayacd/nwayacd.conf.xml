@@ -1,0 +1,5 @@
+<configuration name="nwayacd.conf" description="nway acd control module for FreeSWITCH">
+  <settings>
+    <param name="dbstring" value="user=postgres dbname=records password=Nway2017 host=127.0.0.1 port=5432 sslmode=disable"/> 
+  </settings>
+</configuration>
