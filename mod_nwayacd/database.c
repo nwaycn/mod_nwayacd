@@ -142,11 +142,71 @@ int get_group_idle_ext(const char* group_number,char* ext){
     return 0;
 }
 int update_ext_busy(const char* ext){
-    return 0;
+    PGresult *res;
+	char cmd[4000];
+	int return_val=-1;
+	sprintf(cmd,"update call_extension set call_state='talking' where extension_number ='%s';",ext);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+    return_val = PQresultStatus(res) ;
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "update extensio to busy failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        //exit_nicely(conn);
+    }
+    PQclear(res);
+	return return_val;
+    
 }
-int update_ext_idel(const char* ext){
-    return 0;
+int update_ext_idle(const char* ext){
+    PGresult *res;
+    int return_val=-1;
+	char cmd[4000];
+	
+	sprintf(cmd,"update call_extension set call_state='idle' where extension_number ='%s';",ext);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+    return_val = PQresultStatus(res) ;
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "update extensio to idle failed: %s", PQerrorMessage(conn));
+        PQclear(res);
+        
+    }
+    PQclear(res);
+	return return_val;
 }
 int check_vip_list(const char* callin_number,const char* group_number){
-    return 0;
+    PGresult *res;
+	char cmd[400];
+	int i = 0,t = 0,s,k;
+	sprintf(cmd,"SELECT id  FROM call_vip_number where phone_number ='" + callnumber + "' and group_number ='" +group_number+ "'");
+	res = PQexec(conn,cmd);
+	
+	 
+   if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
+       fprintf(stderr,"Exec Query Failed!\\n");
+       PQclear(res);
+	   return PQresultStatus(res);
+   }
+     
+   i = PQntuples(res);
+    
+   t = PQnfields(res);
+   char id[20];
+   int return_val=-1;
+   for(int s=0; s<i;s++) {
+       for (k = 0; k<t; k++) {
+            
+		   sprintf(id,PQgetvalue(res,s,k));
+           return_val = 0;
+           break;
+          
+       }
+       break;
+   }
+    
+   PQclear(res);
+   return return_val;
 }
