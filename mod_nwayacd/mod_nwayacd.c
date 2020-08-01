@@ -55,10 +55,8 @@ static void acd_get_caller(acd_caller_t *caller, const char *channel_name)
 	}
 }
 
-//nwayacd group_number
-SWITCH_STANDARD_APP(nwayacd_function){
-     
-	char *group_number = NULL;
+switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
+    char *group_number = NULL;
 	//cr_route_t *route = NULL;
 	const char *dest_num = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -100,8 +98,75 @@ SWITCH_STANDARD_APP(nwayacd_function){
 
 end:
 
-	return;
+	 
+    return SWITCH_STATUS_SUCCESS;
 }
+
+//nwayacd group_number
+SWITCH_STANDARD_APP(nwayacd_function){
+     char *group_number = NULL;
+	//cr_route_t *route = NULL;
+	const char *dest_num = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *sql = NULL;
+	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
+	acd_caller_t caller = { 0 }; 
+
+	if (!zstr(data)) {
+		group_number = switch_core_session_strdup(session, data);
+		 
+	}else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
+		goto end;
+	}
+    nwayacd(session,group_name);
+ end:
+    return;   
+	
+}
+
+
+#define UUID_NWAYACD_SYNTAX "nwayacd uuid group_number"
+SWITCH_STANDARD_API(uuid_nwayacd_function)
+{
+    switch_core_session_t *rsession = NULL;
+	char *mycmd = NULL, *para = NULL, *argv[3] = { 0 },  *uuid = NULL, *group_number=NULL;
+	int argc = 0, type = 1;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	uuid = argv[1];
+    group_number = argv[2];
+    if (uuid && strlen(uuid)>1){
+         if (!(rsession = switch_core_session_locate(uuid))) {
+            stream->write_function(stream, "-ERR Cannot locate session!\n");
+            goto done;
+        }
+       return nwayacd(rsession,group_number);
+
+    }
+   
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", MAKECALL_SYNTAX);
+
+done:
+	switch_safe_free(mycmd);
+	switch_safe_free(para);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
 static switch_status_t load_config(void)
 {
 	char *cf = "nwayacd.conf";
@@ -168,7 +233,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 	SWITCH_ADD_APP(app_interface, "nwayacd", "nwayacd", "nwayacd", nwayacd_function,
 		"nway acd ", SAF_NONE);
 	 
-
+    SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
 	return SWITCH_STATUS_SUCCESS;
 }
