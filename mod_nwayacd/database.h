@@ -16,9 +16,10 @@
 extern "C" {  
 #endif  
 
-extern int init_database(char* dbstr);
-extern int release_database();
-extern int check_blank_list(const char* callin_number,const char* group_number);
+ int init_database(char* dbstr);
+ int release_database();
+ int check_blank_list(const char* callin_number,const char* group_number);
+
 #ifdef __cplusplus  
 }  
 #endif  
