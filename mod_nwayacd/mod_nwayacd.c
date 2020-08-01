@@ -105,10 +105,10 @@ end:
 //nwayacd group_number
 SWITCH_STANDARD_APP(nwayacd_function){
      char *group_number = NULL;
-	//cr_route_t *route = NULL;
+	 
 	const char *dest_num = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *sql = NULL;
+	 
 	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
 	acd_caller_t caller = { 0 }; 
 
