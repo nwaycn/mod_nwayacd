@@ -19,14 +19,9 @@ static struct {
 
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
-	int   silence_time;
-	int   analyse_time;
- 
 	unsigned int fs_ver;
 	char dbstring[255];   // read config data when load
-	char baiduip[50];     //  
-	unsigned short baiduport;
-
+	 
 } globals; 
  
 static switch_status_t load_config(void)
