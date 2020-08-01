@@ -14,7 +14,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nwayacd_shutdown);
 SWITCH_MODULE_DEFINITION(mod_nwayacd, mod_nwayacd_load, mod_nwayacd_shutdown, NULL);
-
+#define BLACKLIST_FILE "/home/blacklist.wav"
 static struct {
 
 	switch_memory_pool_t *pool;
@@ -23,7 +23,38 @@ static struct {
 	char dbstring[255];   // read config data when load
 	 
 } globals; 
- 
+
+//caller number 
+struct acd_caller {
+	char *username;
+	int caller_type;
+};
+
+typedef struct acd_caller acd_caller_t;
+
+static void acd_get_caller(acd_caller_t *caller, const char *channel_name)
+{
+	char *p;
+	if (!strncmp(channel_name, "sofia/external", 14))
+	{
+		p = strchr(channel_name + 14, '/');
+		if (p)
+		{
+			caller->username = p + 1;
+			caller->caller_type = 1;
+		}
+	}
+	else if (!strncmp(channel_name, "sofia/internal/", 15))
+	{
+		caller->username = (char *)channel_name + 15;
+		caller->caller_type = 0;
+	}
+	if (caller->username && (p = strchr(caller->username, '@')))
+	{
+		*p++ = '\0';
+	}
+}
+
 //nwayacd group_number
 SWITCH_STANDARD_APP(nwayacd_function){
      
@@ -33,7 +64,7 @@ SWITCH_STANDARD_APP(nwayacd_function){
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *sql = NULL;
 	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
-	 
+	acd_caller_t caller = { 0 }; 
 
 	if (!zstr(data)) {
 		group_number = switch_core_session_strdup(session, data);
@@ -42,14 +73,30 @@ SWITCH_STANDARD_APP(nwayacd_function){
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
 		goto end;
 	}
-    //here to check black list
+    if (!zstr(channel_name))
+	{
+		acd_get_caller(&caller, channel_name);
+		if (!zstr(caller.username))
+		{
+             //here to check black list
+             if (check_blank_list(caller.username,group_number) == 0){
+                 //
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, this call is not permitted! [%s]\n", caller.username);
+				switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
+				switch_ivr_play_file(session, NULL,BLACKLIST_FILE , NULL);
+				goto end;
+             }
+        }
+    }
+
+   
 
     //here to query idle agent in group
 
     //if agents are busy,then insert into queue
 	
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has waiting for an idle agent\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
 end:
 

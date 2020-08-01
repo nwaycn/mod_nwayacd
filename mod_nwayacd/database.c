@@ -35,3 +35,36 @@ int release_database(){
 	exit_nicely(conn);
 	return 0;
 }
+int check_blank_list(const char* callin_number,const char* group_number){
+    PGresult *res;
+	char cmd[400];
+	int i = 0,t = 0,s,k;
+	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='" + callnumber + "' and group_number ='" + "'");
+	res = PQexec(conn,cmd);
+	
+	 
+   if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
+       fprintf(stderr,"Exec Query Failed!\\n");
+       PQclear(res);
+	   return 0;
+   }
+     
+   i = PQntuples(res);
+    
+   t = PQnfields(res);
+   char id[20];
+   int return_val=-1;
+   for(int s=0; s<i;s++) {
+       for (k = 0; k<t; k++) {
+            
+		   sprintf(id,PQgetvalue(res,s,k));
+           return_val = 0;
+           break;
+          
+       }
+       break;
+   }
+    
+   PQclear(res);
+   return return_val;
+}
