@@ -227,7 +227,8 @@ CREATE TABLE public.ext_group
   group_name character varying(100), -- 组或座席组名
   group_number character varying(50), -- 座席组短号
   current_ext_number character varying(50) ,-- 当前组里接听时找到的分机，如果找不到，则再从头开始
-  group_call_mode integer DEFAULT 5 -- 呼叫模式  ...
+  group_call_mode integer DEFAULT 5 ,-- 呼叫模式  ...
+  group_callout_timeout integer DEFAULT 15 -- 呼叫到每个号码时的超时时长，默认15秒
 )
 WITH (
   OIDS=FALSE
@@ -240,7 +241,7 @@ COMMENT ON COLUMN public.ext_group.group_name IS '组或座席组名';
 COMMENT ON COLUMN public.ext_group.group_number IS '座席组短号';
 COMMENT ON COLUMN public.ext_group.current_ext_number IS '当前组里接听时找到的分机，如果找不到，则再从头开始';
 COMMENT ON COLUMN public.ext_group.group_call_mode IS '呼叫模式 0 顺序，1 随机，2 循环，3 记忆优先+ 0 ，4 记忆优先+1 ，5 记忆优先+2';
-
+COMMENT ON COLUMN public.ext_group.group_callout_timeout IS '呼叫到每个号码时的超时时长，默认15秒';
 --动态座席组和座席对应表
 
 CREATE TABLE public.ext_group_map

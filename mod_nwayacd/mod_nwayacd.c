@@ -24,6 +24,37 @@ static struct {
 	 
 } globals; 
  
+//nwayacd group_number
+SWITCH_STANDARD_APP(nwayacd_function){
+     
+	char *group_number = NULL;
+	//cr_route_t *route = NULL;
+	const char *dest_num = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *sql = NULL;
+	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
+	 
+
+	if (!zstr(data)) {
+		group_number = switch_core_session_strdup(session, data);
+		 
+	}else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
+		goto end;
+	}
+    //here to check black list
+
+    //here to query idle agent in group
+
+    //if agents are busy,then insert into queue
+	
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s has waiting for an idle agent\n", switch_channel_get_name(channel));
+
+end:
+
+	return;
+}
 static switch_status_t load_config(void)
 {
 	char *cf = "nwayacd.conf";
@@ -87,8 +118,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "nwayacd", "nwayacd", "nwayacd", bdr_function,
-		"nway acd ", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "nwayacd", "nwayacd", "nwayacd", nwayacd_function,
+		"nway acd ", SAF_NONE);
 	 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
