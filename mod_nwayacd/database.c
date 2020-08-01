@@ -39,7 +39,7 @@ int check_blank_list(const char* callin_number,const char* group_number){
     PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='" + callnumber + "' and group_number ='" + "'");
+	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='" + callnumber + "' and group_number ='" +group_number+ "'");
 	res = PQexec(conn,cmd);
 	
 	 
