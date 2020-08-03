@@ -21,7 +21,7 @@ extern "C" {
  int check_blank_list(const char* callin_number,const char* group_number);
  int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* timeout);
  int get_group_current_ext(const char* group_number,char* ext);
- int get_group_idle_ext(const char* group_number,char* ext);
+ int get_group_idle_ext(const char* callin_number,const char* group_number,char* ext,int* timeout);
  int update_ext_busy(const char* ext);
  int update_ext_idle(const char* ext);
  int check_vip_list(const char* callin_number,const char* group_number);

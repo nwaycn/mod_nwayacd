@@ -236,7 +236,7 @@ WITH (
 ALTER TABLE public.ext_group
   OWNER TO postgres;
 COMMENT ON TABLE public.ext_group
-  IS '分机座席分组，面向110业务';
+  IS '分机座席分组，面向12345业务';
 COMMENT ON COLUMN public.ext_group.group_name IS '组或座席组名';
 COMMENT ON COLUMN public.ext_group.group_number IS '座席组短号';
 COMMENT ON COLUMN public.ext_group.current_ext_number IS '当前组里接听时找到的分机，如果找不到，则再从头开始';
