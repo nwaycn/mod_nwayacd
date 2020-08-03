@@ -95,10 +95,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 	}else{
 		//if agents are busy,then insert into queue
 	}
-    
-	
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
+  	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
 end:
 
@@ -108,14 +105,7 @@ end:
 
 //nwayacd group_number
 SWITCH_STANDARD_APP(nwayacd_function){
-     char *group_number = NULL;
-	 
-	const char *dest_num = NULL;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	 
-	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
-	acd_caller_t caller = { 0 }; 
-
+    char *group_number = NULL;
 	if (!zstr(data)) {
 		group_number = switch_core_session_strdup(session, data);
 		 
