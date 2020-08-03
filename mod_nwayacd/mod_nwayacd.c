@@ -86,12 +86,16 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
              }
         }
     }
-
-   
-
     //here to query idle agent in group
-
-    //if agents are busy,then insert into queue
+	char ext[20];
+	int timeout=0;
+	int ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
+	if (ret_val==0){
+		//has an idle agent extension
+	}else{
+		//if agents are busy,then insert into queue
+	}
+    
 	
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
@@ -130,7 +134,7 @@ SWITCH_STANDARD_APP(nwayacd_function){
 SWITCH_STANDARD_API(uuid_nwayacd_function)
 {
     switch_core_session_t *rsession = NULL;
-	char *mycmd = NULL, *para = NULL, *argv[3] = { 0 },  *uuid = NULL, *group_number=NULL;
+	char *mycmd = NULL,  *argv[3] = { 0 },  *uuid = NULL, *group_number=NULL;
 	int argc = 0, type = 1;
 
 	if (zstr(cmd)) {
@@ -161,7 +165,7 @@ usage:
 
 done:
 	switch_safe_free(mycmd);
-	switch_safe_free(para);
+	 
 	return SWITCH_STATUS_SUCCESS;
 }
 
