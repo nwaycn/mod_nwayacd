@@ -144,7 +144,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 				switch_event_fire(&event);
 			}
 			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
-			goto done;
+			goto end;
 		}
 		else {
 			switch_channel_t *channel = switch_core_session_get_channel(new_session);
@@ -171,7 +171,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 			stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(new_session));
 			switch_core_session_rwunlock(new_session);
 		}
-		goto done;
+		goto end;
 
 
 	}else{
@@ -183,7 +183,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
   	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
 end:
-
+	switch_safe_free(cmd);
     return SWITCH_STATUS_SUCCESS;
 }
 
