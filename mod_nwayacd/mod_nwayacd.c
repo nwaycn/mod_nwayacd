@@ -1,12 +1,12 @@
 /*
---------mod_nwayacd
---------mod_nwayacd.c
---------座席排队数据表
---------许可协议：Apache-2.0
---------开发团队：上海宁卫信息技术有限公司
---------联系Email:lihao@nway.com.cn
---------开始开发时间：2020-8-1 中华人民共和国建军节
-*/
+   --------mod_nwayacd
+   --------mod_nwayacd.c
+   --------座席排队数据表
+   --------许可协议：Apache-2.0
+   --------开发团队：上海宁卫信息技术有限公司
+   --------联系Email:lihao@nway.com.cn
+   --------开始开发时间：2020-8-1 中华人民共和国建军节
+ */
 
 #include <switch.h>
 //#include <libpq-fe.h>
@@ -25,7 +25,7 @@ static struct {
 	switch_mutex_t *mutex;
 	unsigned int fs_ver;
 	char dbstring[255];   // read config data when load
-	 
+
 } globals; 
 
 //caller number 
@@ -71,7 +71,7 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 
 	if (state == CS_HANGUP) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
-		
+
 		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
 		//需要置闲，同时判断是否被agent接听了，如果是被接听了，则不做处理，如果是没接听，则转下一个座席
 	}
@@ -81,38 +81,38 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 
 //主执行函数，用于对来电号码进行排队和处理
 switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
-    char *group_number = NULL;
+	char *group_number = NULL;
 	char* uuid=switch_core_session_get_uuid(session); 
 	const char *dest_num = NULL;
 	char* cmd=NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	 
+
 	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
 	acd_caller_t caller = { 0 }; 
 
 	if (!zstr(data)) {
 		group_number = switch_core_session_strdup(session, data);
-		 
+
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
 		goto end;
 	}
-    if (!zstr(channel_name))
+	if (!zstr(channel_name))
 	{
 		acd_get_caller(&caller, channel_name);
 		if (!zstr(caller.username))
 		{
-             //here to check black list
-             if (check_blank_list(caller.username,group_number) == 0){
-                 //
-                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, this call is not permitted! [%s]\n", caller.username);
+			//here to check black list
+			if (check_blank_list(caller.username,group_number) == 0){
+				//
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, this call is not permitted! [%s]\n", caller.username);
 				switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
 				switch_ivr_play_file(session, NULL,BLACKLIST_FILE , NULL);
 				goto end;
-             }
-        }
-    }
-    //here to query idle agent in group
+			}
+		}
+	}
+	//here to query idle agent in group
 	char ext[20];
 	int timeout=0;
 	int ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
@@ -127,7 +127,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		switch_status_t status = SWITCH_STATUS_FALSE;
 		switch_event_t *nway_event = NULL;
-        status = switch_ivr_originate(session, &new_session, &cause, cmd, 0, NULL, NULL, NULL, NULL, nway_event, SOF_NONE, NULL);
+		status = switch_ivr_originate(session, &new_session, &cause, cmd, 0, NULL, NULL, NULL, NULL, nway_event, SOF_NONE, NULL);
 
 		if (status || !new_session) {
 			const char *fail_str = switch_channel_cause2str(cause);
@@ -137,7 +137,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 				switch_time_t obc_callfrom_etime = switch_micro_time_now() / 1000000;
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLIN, caller.username);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLOUT, ext);
-				 
+
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nway_callstatus", "1");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nway_callfailcode", "%d", cause);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nway_callfrom_etime", "%" SWITCH_TIME_T_FMT, obc_callfrom_etime);
@@ -152,7 +152,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 			switch_caller_extension_t *extension = NULL;
 			switch_channel_set_variable_printf(channel, "nway_callfrom_stime", "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000000);
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, OBCALL_EVENT) == SWITCH_STATUS_SUCCESS) {
-				 
+
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLIN, caller.username);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLOUT, ext); 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nway_callstatus", "0");
@@ -180,47 +180,47 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 		switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
 		switch_ivr_play_file(session, NULL,AGENT_BUSY , NULL);
 	}
-  	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
 end:
 	switch_safe_free(cmd);
-    return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 //nwayacd group_number
 SWITCH_STANDARD_APP(nwayacd_function){
-    char *group_number = NULL;
+	char *group_number = NULL;
 	if (!zstr(data)) {
 		group_number = switch_core_session_strdup(session, data);
-		 
+
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
 		goto end;
 	}
-    nwayacd(session,group_name);
- end:
-    return;   
-	
+	nwayacd(session,group_name);
+end:
+	return;   
+
 }
 
 //nway bridge to a uuid
 //&nway_bridge(uuid)
 SWITCH_STANDARD_APP(nway_bridge_function){
-    //switch_channel_t *channel = switch_core_session_get_channel(session);
+	//switch_channel_t *channel = switch_core_session_get_channel(session);
 
-    char* uuid=switch_core_session_get_uuid(session);
+	char* uuid=switch_core_session_get_uuid(session);
 	char* myuuid = switch_core_session_strdup(session, data);
 	//这里调用uuid_bridge相关函数即可
-    switch_ivr_uuid_bridge(uuid,myuuid);
-    return;   
-	
+	switch_ivr_uuid_bridge(uuid,myuuid);
+	return;   
+
 }
 
 
 #define UUID_NWAYACD_SYNTAX "nwayacd uuid group_number"
 SWITCH_STANDARD_API(uuid_nwayacd_function)
 {
-    switch_core_session_t *rsession = NULL;
+	switch_core_session_t *rsession = NULL;
 	char *mycmd = NULL,  *argv[3] = { 0 },  *uuid = NULL, *group_number=NULL;
 	int argc = 0, type = 1;
 
@@ -237,22 +237,22 @@ SWITCH_STANDARD_API(uuid_nwayacd_function)
 	}
 
 	uuid = argv[1];
-    group_number = argv[2];
-    if (uuid && strlen(uuid)>1){
-         if (!(rsession = switch_core_session_locate(uuid))) {
-            stream->write_function(stream, "-ERR Cannot locate session!\n");
-            goto done;
-        }
-       return nwayacd(rsession,group_number);
+	group_number = argv[2];
+	if (uuid && strlen(uuid)>1){
+		if (!(rsession = switch_core_session_locate(uuid))) {
+			stream->write_function(stream, "-ERR Cannot locate session!\n");
+			goto done;
+		}
+		return nwayacd(rsession,group_number);
 
-    }
-   
+	}
+
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", MAKECALL_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
-	 
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -264,7 +264,7 @@ static switch_status_t load_config(void)
 	switch_xml_t cfg, xml = NULL, param, settings;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-    switch_uuid_str(uuid_str, sizeof(uuid_str));
+	switch_uuid_str(uuid_str, sizeof(uuid_str));
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, uuid_str);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -279,15 +279,15 @@ static switch_status_t load_config(void)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "dbstring")) {
 				if (!zstr(val)) {
-					 
+
 					strncpy(globals.dbstring,val,255);
 
 				}
 			}
-			
+
 		}
 	}
-  done:
+done:
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -299,16 +299,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
- 
+
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 	load_config();
-    if (init_database(globals.dbstring) != 0)
-    {        
+	if (init_database(globals.dbstring) != 0)
+	{        
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " Connection to database failed: %s\n");
-         
+
 		return SWITCH_STATUS_FALSE;
-    }
+	}
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	unsigned int major = atoi(switch_version_major());
@@ -322,11 +322,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "nwayacd", "nwayacd", "nwayacd", nwayacd_function,
-		"nway acd ", SAF_NONE);
+			"nway acd ", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "nway_bridge", "nway_bridge", "nway_bridge", nway_bridge_function,
-		"nway bridge to a uuid ", SAF_NONE);
-	 
-    SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
+			"nway bridge to a uuid ", SAF_NONE);
+
+	SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -335,7 +335,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nwayacd_shutdown)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " nwayacd_shutdown\n");
-	 
+
 	switch_mutex_destroy(globals.mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
