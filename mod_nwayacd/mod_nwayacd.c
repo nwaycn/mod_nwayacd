@@ -9,7 +9,6 @@
  */
 
 #include <switch.h>
-//#include <libpq-fe.h>
 #include "database.h"
 #define AGENT_INFO "nway::info"
 #define AGENT_CALLIN "nway_callin"
@@ -73,6 +72,7 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
 
 		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
+		update_ext_idle(agent_name);
 		//需要置闲，同时判断是否被agent接听了，如果是被接听了，则不做处理，如果是没接听，则转下一个座席
 	}
 
@@ -147,6 +147,8 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 			goto end;
 		}
 		else {
+			//需要设置该分机为忙
+			update_ext_busy(ext);
 			switch_channel_t *channel = switch_core_session_get_channel(new_session);
 			switch_event_t *event;
 			switch_caller_extension_t *extension = NULL;
