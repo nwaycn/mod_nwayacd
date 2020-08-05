@@ -59,6 +59,27 @@ static void acd_get_caller(acd_caller_t *caller, const char *channel_name)
 	}
 }
 
+static switch_status_t nway_hook_state_run(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+	const char *agent_name = NULL;
+
+
+	agent_name = switch_channel_get_variable(channel, AGENT_CALLOUT);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called cc_hook_hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
+
+	if (state == CS_HANGUP) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
+		
+		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
+		//需要置闲，同时判断是否被agent接听了，如果是被接听了，则不做处理，如果是没接听，则转下一个座席
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+//主执行函数，用于对来电号码进行排队和处理
 switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
     char *group_number = NULL;
 	char* uuid=switch_core_session_get_uuid(session); 
@@ -144,8 +165,9 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
 				abort();
 			}
+			//添加对呼叫的回调，用来判断是否呼叫成功
+			switch_core_event_hook_add_state_run(new_session, nway_hook_state_run);
 
-		
 			stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(new_session));
 			switch_core_session_rwunlock(new_session);
 		}
