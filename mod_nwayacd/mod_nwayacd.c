@@ -11,6 +11,10 @@
 #include <switch.h>
 //#include <libpq-fe.h>
 #include "database.h"
+#define AGENT_INFO "nway::info"
+#define AGENT_CALLIN "nway_callin"
+#define AGENT_CALLOUT "nway_callout"
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nwayacd_shutdown);
 SWITCH_MODULE_DEFINITION(mod_nwayacd, mod_nwayacd_load, mod_nwayacd_shutdown, NULL);
@@ -93,9 +97,61 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 	int ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
 	if (ret_val==0){
 		//has an idle agent extension
-		cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d}user/%s &nway_bridge(%s)",
-				timeout,ext,uuid);
-		switch_api_execute("originate", cmd, NULL, stream);
+		//采用呼叫后通过uuid转，先注释
+		cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d,origination_caller_id_number=%s}user/%s",
+				timeout,caller.username,ext);
+		//cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d}user/%s &nway_bridge(%s)",timeout,ext,uuid);
+		//switch_api_execute("originate", cmd, NULL, stream);
+		switch_core_session_t *new_session = NULL;
+		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		switch_status_t status = SWITCH_STATUS_FALSE;
+		switch_event_t *nway_event = NULL;
+        status = switch_ivr_originate(session, &new_session, &cause, cmd, 0, NULL, NULL, NULL, NULL, nway_event, SOF_NONE, NULL);
+
+		if (status || !new_session) {
+			const char *fail_str = switch_channel_cause2str(cause);
+			switch_event_t *event;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", fail_str);
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AGENT_INFO) == SWITCH_STATUS_SUCCESS) {
+				switch_time_t obc_callfrom_etime = switch_micro_time_now() / 1000000;
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLIN, caller.username);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLOUT, ext);
+				 
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nway_callstatus", "1");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nway_callfailcode", "%d", cause);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nway_callfrom_etime", "%" SWITCH_TIME_T_FMT, obc_callfrom_etime);
+				switch_event_fire(&event);
+			}
+			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
+			goto done;
+		}
+		else {
+			switch_channel_t *channel = switch_core_session_get_channel(new_session);
+			switch_event_t *event;
+			switch_caller_extension_t *extension = NULL;
+			switch_channel_set_variable_printf(channel, "nway_callfrom_stime", "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000000);
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, OBCALL_EVENT) == SWITCH_STATUS_SUCCESS) {
+				 
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLIN, caller.username);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLOUT, ext); 
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nway_callstatus", "0");
+				switch_event_fire(&event);
+			}
+			switch_channel_set_variable_safe(channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE, "true");
+			switch_channel_set_variable_safe(channel, SWITCH_API_REPORTING_HOOK_VARIABLE, "hangup_handlers");
+
+			if ((extension = switch_caller_extension_new(new_session, "nwaycall", caller.username)) == 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+				abort();
+			}
+
+		
+			stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(new_session));
+			switch_core_session_rwunlock(new_session);
+		}
+		goto done;
+
+
 	}else{
 		//if agents are busy,then insert into queue
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, no idle agent! [%s]\n", caller.username);
@@ -126,8 +182,9 @@ SWITCH_STANDARD_APP(nwayacd_function){
 }
 
 //nway bridge to a uuid
+//&nway_bridge(uuid)
 SWITCH_STANDARD_APP(nway_bridge_function){
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+    //switch_channel_t *channel = switch_core_session_get_channel(session);
 
     char* uuid=switch_core_session_get_uuid(session);
 	char* myuuid = switch_core_session_strdup(session, data);
