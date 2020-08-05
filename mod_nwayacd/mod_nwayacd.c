@@ -57,8 +57,9 @@ static void acd_get_caller(acd_caller_t *caller, const char *channel_name)
 
 switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
     char *group_number = NULL;
-	 
+	char* uuid=switch_core_session_get_uuid(session); 
 	const char *dest_num = NULL;
+	char* cmd=NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	 
 	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
@@ -92,14 +93,19 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 	int ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
 	if (ret_val==0){
 		//has an idle agent extension
+		cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d}user/%s &nway_bridge(%s)",
+				timeout,ext,uuid);
+		switch_api_execute("originate", cmd, NULL, stream);
 	}else{
 		//if agents are busy,then insert into queue
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, no idle agent! [%s]\n", caller.username);
+		switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
+		switch_ivr_play_file(session, NULL,AGENT_BUSY , NULL);
 	}
   	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
 end:
 
-	 
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -115,6 +121,18 @@ SWITCH_STANDARD_APP(nwayacd_function){
 	}
     nwayacd(session,group_name);
  end:
+    return;   
+	
+}
+
+//nway bridge to a uuid
+SWITCH_STANDARD_APP(nway_bridge_function){
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+
+    char* uuid=switch_core_session_get_uuid(session);
+	char* myuuid = switch_core_session_strdup(session, data);
+	//这里调用uuid_bridge相关函数即可
+    switch_ivr_uuid_bridge(uuid,myuuid);
     return;   
 	
 }
@@ -226,6 +244,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 
 	SWITCH_ADD_APP(app_interface, "nwayacd", "nwayacd", "nwayacd", nwayacd_function,
 		"nway acd ", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "nway_bridge", "nway_bridge", "nway_bridge", nway_bridge_function,
+		"nway bridge to a uuid ", SAF_NONE);
 	 
     SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
