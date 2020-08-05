@@ -324,7 +324,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 	SWITCH_ADD_APP(app_interface, "nwayacd", "nwayacd", "nwayacd", nwayacd_function,
 			"nway acd ", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "nway_bridge", "nway_bridge", "nway_bridge", nway_bridge_function,
-			"nway bridge to a uuid ", SAF_NONE);
+			"nway bridge to a leg uuid ", SAF_NONE);
 
 	SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
