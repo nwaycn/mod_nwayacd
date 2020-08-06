@@ -63,7 +63,7 @@ int check_blank_list(const char* callin_number,const char* group_number){
 	for(int s=0; s<i;s++) {
 		for (k = 0; k<t; k++) {
 
-			sprintf(id,PQgetvalue(res,s,k));
+			sprintf(id,"%s",PQgetvalue(res,s,k));
 			return_val = 0;
 			break;
 
@@ -97,7 +97,7 @@ int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* time
 	for(int s=0; s<i;s++) {
 		for (k = 0; k<t; k++) {
 
-			sprintf(tmp,PQgetvalue(res,s,k));
+			sprintf(tmp,"%s",PQgetvalue(res,s,k));
 			if (k == 0){
 				*mode = atoi(tmp);
 			}else{
@@ -132,7 +132,7 @@ int get_group_current_ext(const char* group_number,char* ext){
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
 		for (k = 0; k<t; k++) {
-			sprintf(*ext,PQgetvalue(res,s,k));
+			sprintf(ext,"%s",PQgetvalue(res,s,k));
 		}
 		return_val = 0;
 		break;
@@ -161,7 +161,7 @@ int get_last_answer_ext(const char* callin_number,const char* group_number,char*
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
 		for (k = 0; k<t; k++) {
-			sprintf(ext,PQgetvalue(res,s,k));
+			sprintf(ext,"%s",PQgetvalue(res,s,k));
 		}
 		return_val = 0;
 		break;
@@ -218,7 +218,7 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 				int return_val=-1;
 				for(int s=0; s<i;s++) {
 					for (k = 0; k<t; k++) {
-						sprintf(ext,PQgetvalue(res,s,k));
+						sprintf(ext,"%s",PQgetvalue(res,s,k));
 					}
 					return_val = 0;
 					break;
@@ -286,7 +286,7 @@ int check_vip_list(const char* callin_number,const char* group_number){
 	for(int s=0; s<i;s++) {
 		for (k = 0; k<t; k++) {
 
-			sprintf(id,PQgetvalue(res,s,k));
+			sprintf(id,"%s",PQgetvalue(res,s,k));
 			return_val = 0;
 		}
 		break;
@@ -360,8 +360,8 @@ int query_vip_callin(char* callin_number,char* group_number){
 	
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		sprintf(callin_number,PQgetvalue(res,s,0));
-		sprintf(group_number,PQgetvalue(res,s,1));	
+		sprintf(callin_number,"%s",PQgetvalue(res,s,0));
+		sprintf(group_number,"%s",PQgetvalue(res,s,1));	
 		return_val = 0;
 	}
 
@@ -390,8 +390,8 @@ int query_a_data_from_queue(char* callin_number,char* group_number){
 	
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		sprintf(callin_number,PQgetvalue(res,s,0));
-		sprintf(group_number,PQgetvalue(res,s,1));	
+		sprintf(callin_number,"%s",PQgetvalue(res,s,0));
+		sprintf(group_number,"%s",PQgetvalue(res,s,1));	
 		return_val = 0;
 	}
 
