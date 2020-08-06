@@ -259,3 +259,36 @@ ALTER TABLE public.ext_group_map
 COMMENT ON COLUMN public.ext_group_map.ext_group_id IS '分机组id';
 COMMENT ON COLUMN public.ext_group_map.ext_group_number IS '座席组号码';
 COMMENT ON COLUMN public.ext_group_map.ext IS '分机';
+
+
+
+----------------------------------------------------------------------
+----排队
+----------------------------------------------------------------------
+CREATE SEQUENCE public.callin_queue_id_seq
+  INCREMENT 1
+  MINVALUE 1
+  MAXVALUE 9223372036854775807
+  START 1
+  CACHE 1;
+ALTER TABLE public.callin_queue_id_seq
+  OWNER TO postgres;
+CREATE TABLE public.callin_queue
+(
+  id bigint NOT NULL DEFAULT nextval('callin_queue_id_seq'::regclass),
+  callin_number character varying(50), -- 呼入号码
+  callin_group character varying(50), -- 呼入组
+  callin_type integer DEFAULT 0, -- 0为普通，1为VIP
+  call_time timestamp without time zone DEFAULT now() -- 开始排队时间
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.callin_queue
+  OWNER TO postgres;
+COMMENT ON TABLE public.callin_queue
+  IS '呼入但座席忙的情况下，进行排队，排队则是先进先出';
+COMMENT ON COLUMN public.callin_queue.callin_number IS '呼入号码';
+COMMENT ON COLUMN public.callin_queue.callin_group IS '呼入组';
+COMMENT ON COLUMN public.callin_queue.callin_type IS '0为普通，1为VIP';
+COMMENT ON COLUMN public.callin_queue.call_time IS '开始排队时间';

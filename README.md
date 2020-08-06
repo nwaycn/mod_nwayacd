@@ -9,15 +9,19 @@
 
 #### 安装教程
 
-1.  需要安装postgresql-devel postgresql-libs等库
-2.  需要先编译和安装freeswitch
-3.  在freeswitch的application路径下把此仓库代码放置于源码路径下，
-4.  配置Makefile中的postgresql路径，如：
-PQROOT=/usr/local/pgsql
-PQINCLUDE=-I${PQROOT}/include
-PQLIBRARY=-L${PQROOT}/lib 
+1. 需要安装postgresql-devel postgresql-libs等库
 
-5.  make ,然后cp mod_nwayacd /usr/local/freeswitch/mod/.下
+2. 需要先编译和安装freeswitch
+
+3. 在freeswitch的application路径下把此仓库代码放置于源码路径下，
+
+4. 配置Makefile中的postgresql路径，如：
+   ```PQROOT=/usr/local/pgsql`
+
+   `PQINCLUDE=-I${PQROOT}/include`
+   PQLIBRARY=-L${PQROOT}/lib  ```
+
+5. make ,然后cp mod_nwayacd.so /usr/local/freeswitch/mod/.下
 
 #### 使用说明
 
@@ -48,4 +52,4 @@ PQLIBRARY=-L${PQROOT}/lib
 6.  ext_group_map     座席组和座席对应表，支持多对多
 
 
- 
+
