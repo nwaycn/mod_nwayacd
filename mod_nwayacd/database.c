@@ -11,6 +11,8 @@
 #include "database.h"
 #include <libpq-fe.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 PGconn     *conn=NULL;
 //这里是可以再多加一些其它能力进去，故而只是一句，也用了一个函数
@@ -43,7 +45,7 @@ int check_blank_list(const char* callin_number,const char* group_number){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='" + callnumber + "' and group_number ='" +group_number+ "'");
+	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='%s' and group_number ='%s';", callin_number ,group_number );
 	res = PQexec(conn,cmd);
 
 
@@ -78,7 +80,7 @@ int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* time
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT group_call_mode ,group_callout_timeout FROM ext_group where group_number  ='" +group_number+ "'"); 
+	sprintf(cmd,"SELECT group_call_mode ,group_callout_timeout FROM ext_group where group_number  ='%s';",group_number); 
 	//理论上只有一条
 	res = PQexec(conn,cmd);
 
@@ -114,7 +116,7 @@ int get_group_current_ext(const char* group_number,char* ext){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT current_ext_number  FROM ext_group where group_number  ='" +group_number+ "'"); 
+	sprintf(cmd,"SELECT current_ext_number  FROM ext_group where group_number  ='%s';" ,group_number); 
 	//理论上只有一条
 	res = PQexec(conn,cmd);
 
@@ -143,7 +145,7 @@ int get_last_answer_ext(const char* callin_number,const char* group_number,char*
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT extension_number  FROM call_extension where reg_state='reded' and seat_status='idle' and call_state='ready' and extension_number  = (select agent_number from cf_call_remember where call_number='" +callin_number+ "' order by insert_time desc limit 1 )"); 
+	sprintf(cmd,"SELECT extension_number  FROM call_extension where reg_state='reded' and seat_status='idle' and call_state='ready' and extension_number  = (select agent_number from cf_call_remember where call_number='%s' order by insert_time desc limit 1 )",callin_number); 
 	//理论上只有一条
 	res = PQexec(conn,cmd);
 
@@ -188,20 +190,20 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 				PGresult *res;
 				int i = 0,t = 0,s,k;
 				if (mode ==0 || mode ==3){
-					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and 
-							(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') 
-							and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'
-									)) order by c.extension_number limit 1",group_number,group_number);
+					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and "
+							"(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') "
+							" and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s' "
+									")) order by c.extension_number limit 1",group_number,group_number);
 				}else if(mode == 1 || mode==4){
-					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and 
-							(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') 
-							and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'
-									)) order by random() limit 1",group_number,group_number);
+					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and "
+							"(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') "
+							"and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'"
+									")) order by random() limit 1",group_number,group_number);
 				}else if(mode ==2 || mode==5){
-					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and 
-							(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') 
-							and (c.extension_number >e.current_ext_number) and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'
-									)) order by c.extension_number limit 1",group_number,group_number);
+					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and "
+							"(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') "
+							"and (c.extension_number >e.current_ext_number) and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'"
+									")) order by c.extension_number limit 1",group_number,group_number);
 				}
 				res = PQexec(conn,cmd);
 
@@ -267,7 +269,7 @@ int check_vip_list(const char* callin_number,const char* group_number){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT id  FROM call_vip_number where phone_number ='" + callnumber + "' and group_number ='" +group_number+ "'");
+	sprintf(cmd,"SELECT id  FROM call_vip_number where phone_number ='%s' and group_number ='%s';" , callin_number ,group_number);
 	res = PQexec(conn,cmd);
 
 

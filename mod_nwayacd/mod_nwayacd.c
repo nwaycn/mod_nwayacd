@@ -18,6 +18,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nwayacd_shutdown);
 SWITCH_MODULE_DEFINITION(mod_nwayacd, mod_nwayacd_load, mod_nwayacd_shutdown, NULL);
 #define BLACKLIST_FILE "/home/blacklist.wav"
+#define AGENT_BUSY "/home/busy.wav"
 static struct {
 
 	switch_memory_pool_t *pool;
@@ -80,7 +81,7 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 }
 
 //主执行函数，用于对来电号码进行排队和处理
-switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
+switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,switch_stream_handle_t *stream){
 	char *group_number = NULL;
 	char* uuid=switch_core_session_get_uuid(session); 
 	const char *dest_num = NULL;
@@ -89,9 +90,10 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 
 	const char *channel_name = switch_channel_get_variable(channel, "channel_name");
 	acd_caller_t caller = { 0 }; 
-
-	if (!zstr(data)) {
-		group_number = switch_core_session_strdup(session, data);
+	int timeout=0;
+	int ret_val =0;
+	if (!zstr(group_name)) {
+	//	group_number = switch_core_session_strdup(session, data);
 
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
@@ -114,8 +116,8 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 	}
 	//here to query idle agent in group
 	char ext[20];
-	int timeout=0;
-	int ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
+	 
+	ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
 	if (ret_val==0){
 		//has an idle agent extension
 		//采用呼叫后通过uuid转，先注释
@@ -143,7 +145,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nway_callfrom_etime", "%" SWITCH_TIME_T_FMT, obc_callfrom_etime);
 				switch_event_fire(&event);
 			}
-			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
+			if (stream)	stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
 			goto end;
 		}
 		else {
@@ -153,7 +155,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 			switch_event_t *event;
 			switch_caller_extension_t *extension = NULL;
 			switch_channel_set_variable_printf(channel, "nway_callfrom_stime", "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000000);
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, OBCALL_EVENT) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AGENT_INFO) == SWITCH_STATUS_SUCCESS) {
 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLIN, caller.username);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLOUT, ext); 
@@ -169,8 +171,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name){
 			}
 			//添加对呼叫的回调，用来判断是否呼叫成功
 			switch_core_event_hook_add_state_run(new_session, nway_hook_state_run);
-
-			stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(new_session));
+			if (stream)	stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(new_session));
 			switch_core_session_rwunlock(new_session);
 		}
 		goto end;
@@ -199,7 +200,7 @@ SWITCH_STANDARD_APP(nwayacd_function){
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
 		goto end;
 	}
-	nwayacd(session,group_name);
+	nwayacd(session,group_number,NULL);
 end:
 	return;   
 
@@ -245,12 +246,12 @@ SWITCH_STANDARD_API(uuid_nwayacd_function)
 			stream->write_function(stream, "-ERR Cannot locate session!\n");
 			goto done;
 		}
-		return nwayacd(rsession,group_number);
+		return nwayacd(rsession,group_number,stream);
 
 	}
 
 usage:
-	stream->write_function(stream, "-USAGE: %s\n", MAKECALL_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", UUID_NWAYACD_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
