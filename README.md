@@ -11,20 +11,41 @@
 
 1.  需要安装postgresql-devel postgresql-libs等库
 2.  需要先编译和安装freeswitch
-3.  在freeswitch的application路径下把此仓库代码放置于源码路径下，make ,然后cp mod_nwayacd /usr/local/freeswitch/mod/.下
+3.  在freeswitch的application路径下把此仓库代码放置于源码路径下，
+4.  配置Makefile中的postgresql路径，如：
+PQROOT=/usr/local/pgsql
+PQINCLUDE=-I${PQROOT}/include
+PQLIBRARY=-L${PQROOT}/lib 
+
+5.  make ,然后cp mod_nwayacd /usr/local/freeswitch/mod/.下
 
 #### 使用说明
 
 1.  修改nwayacd.conf.xml中的数据库相关信息
-2.  配置路由
-3.  呼入后进入路由即可
+2.  把db/nwaycc.sql导入到postgresql数据库中。
+3.  在座席组中添加几个座席组，如 12345组，119组等
+4.  在座席登录时，需要动态的在 ext_group_map 把登录的座席和座席组对应加进去
+5.  需要在座席登录时，修改座席分机在 call_extension 表中的seat_state='up',seat_status='idle' ,call_state='ready';
+6.  配置路由 <action appliction="nwayacd" data="12345"/>
+7.  那么当有电话进来后，会自动按规定的模式寻找空闲的座席进行分配
 
-#### 参与贡献
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+
+#### 数据库说明
+
+1.  call_extension    分机表
+2.  call_blacklist    黑名单表
+3.  call_vip_number   VIP来电表
+4.  cf_call_remember  短期来电记忆表，按实际需要进行定期清理
+5.  ext_group         座席组表
+    COMMENT ON TABLE public.ext_group
+        IS '分机座席分组，面向12345业务';
+    COMMENT ON COLUMN public.ext_group.group_name IS '组或座席组名';
+    COMMENT ON COLUMN public.ext_group.group_number IS '座席组短号';
+    COMMENT ON COLUMN public.ext_group.current_ext_number IS '当前组里接听时找到的分机，如果找不到，则再从头开始';
+    COMMENT ON COLUMN public.ext_group.group_call_mode IS '呼叫模式 0 顺序，1 随机，2 循环，3 记忆优先+ 0 ，4 记忆优先+1 ，5 记忆优先+2';
+    COMMENT ON COLUMN public.ext_group.group_callout_timeout IS '呼叫到每个号码时的超时时长，默认15秒';
+6.  ext_group_map     座席组和座席对应表，支持多对多
 
 
  

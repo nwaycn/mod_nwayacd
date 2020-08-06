@@ -3,9 +3,9 @@ BASE=/usr/local/freeswitch
 SOURCES = mod_nwayacd.c database.c
 
 OBJS = $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
-
-PQINCLUDE=-I/opt/pgsql/include
-PQLIBRARY=-L/opt/pgsql/lib 
+PQROOT=/usr/local/pgsql
+PQINCLUDE=-I${PQROOT}/include
+PQLIBRARY=-L${PQROOT}/lib 
 #-lnlsCppOpu
 
 CXXFLAGS = -fpermissive
