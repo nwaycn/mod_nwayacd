@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <switch.h>
 PGconn     *conn=NULL;
 //这里是可以再多加一些其它能力进去，故而只是一句，也用了一个函数
 static void exit_nicely(PGconn *c)
@@ -265,13 +265,13 @@ int update_ext_idle(const char* ext){
 	PQclear(res);
 	return return_val;
 }
+//查找是否vip客户，只在排队时有用
 int check_vip_list(const char* callin_number,const char* group_number){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
 	sprintf(cmd,"SELECT id  FROM call_vip_number where phone_number ='%s' and group_number ='%s';" , callin_number ,group_number);
 	res = PQexec(conn,cmd);
-
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
 		fprintf(stderr,"Exec Query Failed!\\n");
@@ -280,7 +280,6 @@ int check_vip_list(const char* callin_number,const char* group_number){
 	}
 
 	i = PQntuples(res);
-
 	t = PQnfields(res);
 	char id[20];
 	int return_val=-1;
@@ -289,10 +288,111 @@ int check_vip_list(const char* callin_number,const char* group_number){
 
 			sprintf(id,PQgetvalue(res,s,k));
 			return_val = 0;
-			break;
-
 		}
 		break;
+	}
+
+	PQclear(res);
+	return return_val;
+}
+ 
+
+int insert_into_queue(const char* callin_number,const char* group_number){
+	int is_vip=1;
+	
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+	if (check_vip_list(callin_number,group_number) != 0){
+		is_vip = 0;
+	}
+	sprintf(cmd,"INSERT INTO public.callin_queue(callin_number, callin_group, callin_type, call_time)VALUES ('%s','%s',%d,now());",callin_number,group_number,is_vip);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		fprintf(stderr, "insert record into callin queue failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+
+	}
+	PQclear(res);
+	return return_val;
+}
+int delete_from_queue(const char* callin_number,const char* group_number){
+	int is_vip=1;
+	
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+	if (check_vip_list(callin_number,group_number) != 0){
+		is_vip = 0;
+	}
+	sprintf(cmd,"delete from callin_queue where callin_number='%s' and callin_group='%s');",callin_number,group_number);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		fprintf(stderr, "delete record from callin queue failed: %s", PQerrorMessage(conn));
+		PQclear(res);
+
+	}
+	PQclear(res);
+	return return_val;
+}
+int query_vip_callin(char* callin_number,char* group_number){
+	 
+	PGresult *res;
+	char cmd[400];
+	int i = 0,t = 0,s,k;
+	sprintf(cmd,"SELECT callin_number,callin_group from callin_queue where callin_type=1 order by call_time limit 1;");
+	res = PQexec(conn,cmd);
+
+	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
+		fprintf(stderr,"Exec Query Failed!\\n");
+		PQclear(res);
+		return PQresultStatus(res);
+	}
+
+	i = PQntuples(res);
+	t = PQnfields(res);
+	
+	int return_val=-1;
+	for(int s=0; s<i;s++) {
+		sprintf(callin_number,PQgetvalue(res,s,0));
+		sprintf(group_number,PQgetvalue(res,s,1));	
+		return_val = 0;
+	}
+
+	PQclear(res);
+	return return_val;
+
+}
+int query_a_data_from_queue(char* callin_number,char* group_number){
+	if (query_vip_callin(callin_number,group_number) ==0){
+		return 0;
+	}
+	PGresult *res;
+	char cmd[400];
+	int i = 0,t = 0,s,k;
+	sprintf(cmd,"SELECT callin_number,callin_group from callin_queue where callin_type=0 order by call_time limit 1;");
+	res = PQexec(conn,cmd);
+
+	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
+		fprintf(stderr,"Exec Query Failed!\\n");
+		PQclear(res);
+		return PQresultStatus(res);
+	}
+
+	i = PQntuples(res);
+	t = PQnfields(res);
+	
+	int return_val=-1;
+	for(int s=0; s<i;s++) {
+		sprintf(callin_number,PQgetvalue(res,s,0));
+		sprintf(group_number,PQgetvalue(res,s,1));	
+		return_val = 0;
 	}
 
 	PQclear(res);
