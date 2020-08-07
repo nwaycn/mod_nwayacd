@@ -330,25 +330,37 @@ SWITCH_STANDARD_API(nway_login_function)
 	if ((argc = switch_separate_string(mygroup, ',', group_number, (sizeof(group_number) / sizeof(group_number[0])))) < 2) {
 		goto usage;
 	}
+	//先要让上线
+	if (nway_agent_online(extension) == 0){
+		//这里需要ｅｓｌ事件
+	}else{
+		switch_log_printf(SWITCH_CHANNEL_ERR, SWITCH_LOG_DEBUG, "login extension:%s, group:%s failed\n", extension,group_number[i]);
+	}
 	//按group数量插入座席组与座席对应表
+
 	for (int i=0;i<argc;i++){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "login extension:%s, group:%s\n", extension,group_number[i]);
+		if (nway_add_to_group(extension,group_number[i]) == 0){
+			//esl
+		}else{
+			switch_log_printf(SWITCH_CHANNEL_ERR, SWITCH_LOG_DEBUG, "login extension:%s, group:%s add to group failed\n", extension,group_number[i]);
+		}
 	}
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGIN_SYNTAX);
 
 done:
 	switch_safe_free(mygroup);
-	switch_safe_free(mycmd);
+	swit ch_safe_free(mycmd);
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS; 
 }
 #define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage:nwaylogout 1000"
 SWITCH_STANDARD_API(nway_logout_function)
 {
 	//最大10个分组	
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
-	int argc = 0, type = 1;
+	int argc = 0, type =   1;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -364,6 +376,9 @@ SWITCH_STANDARD_API(nway_logout_function)
 
 	extension = argv[1];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "logout extension:%s\n", extension);
+	if (nway_agent_offline(extension)==0){
+		//esl
+	}
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGOUT_SYNTAX);
 
@@ -383,7 +398,7 @@ SWITCH_STANDARD_API(nway_busy_function)
 	if (zstr(cmd)) {
 		goto usage;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	switch_log_printf(S WITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
 	if (!(mycmd = strdup(cmd))) {
 		goto usage;
 	}
@@ -394,6 +409,9 @@ SWITCH_STANDARD_API(nway_busy_function)
 
 	extension = argv[1];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s busy\n", extension);
+	if (nway_agent_set_busy(extension) ==0){
+		//esl
+	}
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_BUSY_SYNTAX);
 
@@ -412,7 +430,7 @@ SWITCH_STANDARD_API(nway_ready_function)
 	if (zstr(cmd)) {
 		goto usage;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	switch_log_printf( SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
 	if (!(mycmd = strdup(cmd))) {
 		goto usage;
 	}
@@ -423,6 +441,9 @@ SWITCH_STANDARD_API(nway_ready_function)
 
 	extension = argv[1];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s ready\n", extension);
+	if (nway_agent_set_ready(extension) ==0){
+		//esl
+	}
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_READY_SYNTAX);
 

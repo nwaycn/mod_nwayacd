@@ -323,15 +323,10 @@ int insert_into_queue(const char* callin_number,const char* group_number){
 	return return_val;
 }
 int delete_from_queue(const char* callin_number,const char* group_number){
-	int is_vip=1;
-
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
-	if (check_vip_list(callin_number,group_number) != 0){
-		is_vip = 0;
-	}
-	sprintf(cmd,"delete from callin_queue where callin_number='%s' and callin_group='%s');",callin_number,group_number);
+	sprintf(cmd,"delete from callin_queue where callin_number='%s' and callin_group='%s';",callin_number,group_number);
 	//fprintf(stderr,cmd);
 	res = PQexec(conn, cmd);
 	return_val = PQresultStatus(res) ;
@@ -396,6 +391,104 @@ int query_a_data_from_queue(char* callin_number,char* group_number){
 		return_val = 0;
 	}
 
+	PQclear(res);
+	return return_val;
+}
+int nway_agent_online(const char* extension){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+
+	sprintf(cmd,"update call_extension set seat_state='up' where extension_number='%s';",extension);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "extension up failed: %s\n",PQerrorMessage(conn));
+	}
+	PQclear(res);
+	return return_val;
+}
+int nway_agent_offline(const char* extension){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+
+	sprintf(cmd,"update call_extension set seat_state='down' where extension_number='%s';",extension);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_offline up failed: %s\n",PQerrorMessage(conn));
+	}
+	PQclear(res);
+	nway_remove_from_group(extension);
+	return return_val;
+}
+int nway_add_to_group(const char* extension,const char*  group_number){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+
+	sprintf(cmd,"INSERT INTO public.ext_group_map(id, ext_group_id, ext_group_number, ext)VALUES (0,0,'%s','%s');",group_number,extension);
+
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_add_to_group  failed: %s\n",PQerrorMessage(conn));
+	}
+	PQclear(res);
+	return return_val;
+}
+int nway_remove_from_group(const char* extension){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+
+	sprintf(cmd,"delete from ext_group_map where ext='%s';",extension);
+
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_remove_from_group up failed: %s\n",PQerrorMessage(conn));
+	}
+	PQclear(res);
+	return return_val;
+}
+int nway_agent_set_busy(const char* extension){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+
+	sprintf(cmd,"update call_extension set seat_status='busy' where extension_number='%s';",extension);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_set_busy failed: %s\n",PQerrorMessage(conn));
+	}
+	PQclear(res);
+	return return_val;
+}
+
+int nway_agent_set_ready(const char* extension){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+
+	sprintf(cmd,"update call_extension set seat_status='idle',call_state='ready' where extension_number='%s';",extension);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_set_ready failed: %s\n",PQerrorMessage(conn));
+	}
 	PQclear(res);
 	return return_val;
 }

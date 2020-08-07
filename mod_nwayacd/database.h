@@ -18,21 +18,33 @@ extern "C" {
 
 	int init_database(char* dbstr);
 	int release_database();
-	int check_blank_list(const char* callin_number,const char* group_number);
-	int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* timeout);
+	int check_blank_list(con 	char* callin_number,const char* group_number);
+	int get_group_call_mode_and_timeout(const char* group_number,int* mo de,int* timeout);
 	int get_group_current_ext(const char* group_number,char* ext);
-	int get_group_idle_ext_first(const char* callin_number,const char* group_number,char* ext,int* timeout);
+	int ge t_group_id le_ext_first(const char* callin_number,const char* group_number,cha r* ext,int* timeout);
 	int update_ext_busy(const char* ext);
-	int update_ext_idle(const char* ext);
-	int check_vip_list(const char* callin_number,const char* group_number);
+	int up date_ext_idle(const char*  ext);
+	in t check_vip_list(const char* callin_number,const char* group_number);
 	//插入一个队列排队，由插入的同时判断是不是vip
-	int insert_into_queue(const char* callin_number,const char* group_number);
+	int insert_into_queue(const char* callin_ number,const char* group_number);
 	int delete_from_queue(const char* callin_number,const char* group_number);
-	//从队列中取出一个呼入号码和组，内部进行判断是vip优先，先进先出
+	//从队列中取出一个呼入号码和组，内部进行判断是vip优先，先进 先出
 	int query_a_data_from_queue(char* callin_number,char* group_number);
-	//int 
+	// 上线
+	int nway_agent_online(const char* extension);
+	//下线
+	int nway_agent_offline(const char* extension);
+	//添加到组中
+	int nway_add_to_group(const char* extension,const char*  group_number);
+	//清空座席组对应
+	int nway_remove_from_group(const char* extension);
+	//设置忙
+	int nway_agent_set_busy(const char* extension);
+	//设置闲可接电话
+	int nway_agent_set_ready(coonst char* extension);
+	//i nt 
 #ifdef __cplusplus  
 }  
 #endif  
 
-#endif
+#endif 		
