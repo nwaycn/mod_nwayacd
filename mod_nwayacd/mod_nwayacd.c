@@ -334,7 +334,7 @@ SWITCH_STANDARD_API(nway_login_function)
 	if (nway_agent_online(extension) == 0){
 		//这里需要ｅｓｌ事件
 	}else{
-		switch_log_printf(SWITCH_CHANNEL_ERR, SWITCH_LOG_DEBUG, "login extension:%s, group:%s failed\n", extension,group_number[i]);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extensio and online:%sfailed\n", extension);
 	}
 	//按group数量插入座席组与座席对应表
 
@@ -343,7 +343,7 @@ SWITCH_STANDARD_API(nway_login_function)
 		if (nway_add_to_group(extension,group_number[i]) == 0){
 			//esl
 		}else{
-			switch_log_printf(SWITCH_CHANNEL_ERR, SWITCH_LOG_DEBUG, "login extension:%s, group:%s add to group failed\n", extension,group_number[i]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extension:%s, group:%s add to group failed\n", extension,group_number[i]);
 		}
 	}
 usage:
@@ -351,7 +351,7 @@ usage:
 
 done:
 	switch_safe_free(mygroup);
-	swit ch_safe_free(mycmd);
+	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS; 
 }
@@ -398,7 +398,7 @@ SWITCH_STANDARD_API(nway_busy_function)
 	if (zstr(cmd)) {
 		goto usage;
 	}
-	switch_log_printf(S WITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
 	if (!(mycmd = strdup(cmd))) {
 		goto usage;
 	}
