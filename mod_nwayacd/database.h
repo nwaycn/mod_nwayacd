@@ -26,10 +26,10 @@ extern "C" {
 	int update_ext_idle(const char*  ext);
 	int check_vip_list(const char* callin_number,const char* group_number);
 	//插入一个队列排队，由插入的同时判断是不是vip
-	int insert_into_queue(const char* callin_number,const char* group_number);
+	int insert_into_queue(const char* callin_number,const char* group_number,const char* call_uuid);
 	int delete_from_queue(const char* callin_number,const char* group_number);
 	//从队列中取出一个呼入号码和组，内部进行判断是vip优先，先进 先出
-	int query_a_data_from_queue(char* callin_number,char* group_number);
+	int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uuid);
 	// 上线
 	int nway_agent_online(const char* extension);
 	//下线

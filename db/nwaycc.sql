@@ -279,7 +279,8 @@ CREATE TABLE public.callin_queue
   callin_number character varying(50), -- 呼入号码
   callin_group character varying(50), -- 呼入组
   callin_type integer DEFAULT 0, -- 0为普通，1为VIP
-  call_time timestamp without time zone DEFAULT now() -- 开始排队时间
+  call_time timestamp without time zone DEFAULT now() ,-- 开始排队时间
+  call_uuid character varying(50) DEFAULT ''::character varying -- 一条独立的uuid,用来找到该呼叫
 )
 WITH (
   OIDS=FALSE
@@ -292,3 +293,4 @@ COMMENT ON COLUMN public.callin_queue.callin_number IS '呼入号码';
 COMMENT ON COLUMN public.callin_queue.callin_group IS '呼入组';
 COMMENT ON COLUMN public.callin_queue.callin_type IS '0为普通，1为VIP';
 COMMENT ON COLUMN public.callin_queue.call_time IS '开始排队时间';
+COMMENT ON COLUMN public.callin_queue.call_uuid IS '一条独立的uuid,用来找到该呼叫';

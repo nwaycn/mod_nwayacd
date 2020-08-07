@@ -299,7 +299,7 @@ int check_vip_list(const char* callin_number,const char* group_number){
 }
 
 
-int insert_into_queue(const char* callin_number,const char* group_number){
+int insert_into_queue(const char* callin_number,const char* group_number,const char* call_uuid){
 	int is_vip=1;
 
 	PGresult *res;
@@ -308,7 +308,7 @@ int insert_into_queue(const char* callin_number,const char* group_number){
 	if (check_vip_list(callin_number,group_number) != 0){
 		is_vip = 0;
 	}
-	sprintf(cmd,"INSERT INTO public.callin_queue(callin_number, callin_group, callin_type, call_time)VALUES ('%s','%s',%d,now());",callin_number,group_number,is_vip);
+	sprintf(cmd,"INSERT INTO public.callin_queue(callin_number, callin_group, callin_type, call_time,call_uuid)VALUES ('%s','%s',%d,now(),'%s');",callin_number,group_number,is_vip,call_uuid);
 	//fprintf(stderr,cmd);
 	res = PQexec(conn, cmd);
 	return_val = PQresultStatus(res) ;
@@ -337,12 +337,12 @@ int delete_from_queue(const char* callin_number,const char* group_number){
 	PQclear(res);
 	return return_val;
 }
-int query_vip_callin(char* callin_number,char* group_number){
+int query_vip_callin(char* callin_number,char* group_number,char* call_uuid){
 
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT callin_number,callin_group from callin_queue where callin_type=1 order by call_time limit 1;");
+	sprintf(cmd,"SELECT callin_number,callin_group,call_uuid from callin_queue where callin_type=1 order by call_time limit 1;");
 	res = PQexec(conn,cmd);
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
@@ -358,6 +358,7 @@ int query_vip_callin(char* callin_number,char* group_number){
 	for(int s=0; s<i;s++) {
 		sprintf(callin_number,"%s",PQgetvalue(res,s,0));
 		sprintf(group_number,"%s",PQgetvalue(res,s,1));	
+		sprintf(call_uuid,"%s",PQgetvalue(res,s,2));	
 		return_val = 0;
 	}
 
@@ -365,14 +366,14 @@ int query_vip_callin(char* callin_number,char* group_number){
 	return return_val;
 
 }
-int query_a_data_from_queue(char* callin_number,char* group_number){
+int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uuid){
 	if (query_vip_callin(callin_number,group_number) ==0){
 		return 0;
 	}
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT callin_number,callin_group from callin_queue where callin_type=0 order by call_time limit 1;");
+	sprintf(cmd,"SELECT callin_number,callin_group,call_uuid from callin_queue where callin_type=0 order by call_time limit 1;");
 	res = PQexec(conn,cmd);
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
@@ -388,6 +389,7 @@ int query_a_data_from_queue(char* callin_number,char* group_number){
 	for(int s=0; s<i;s++) {
 		sprintf(callin_number,"%s",PQgetvalue(res,s,0));
 		sprintf(group_number,"%s",PQgetvalue(res,s,1));	
+		sprintf(call_uuid,"%s",PQgetvalue(res,s,2));	
 		return_val = 0;
 	}
 

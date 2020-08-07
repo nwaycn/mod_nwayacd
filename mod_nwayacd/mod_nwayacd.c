@@ -182,6 +182,8 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, no idle agent! [%s]\n", caller.username);
 		switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
 		switch_ivr_play_file(session, NULL,AGENT_BUSY , NULL);
+		//应把未能呼转的加进排队队列中
+		
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
@@ -299,7 +301,7 @@ done:
 }
 
 
-#define NWAY_LOGIN_SYNTAX "nway_login extension group_list\nUsage:nwaylogin 1000 120,119,110"
+#define NWAY_LOGIN_SYNTAX "nway_login extension group_list\nUsage:nway_login 1000 120,119,110"
 SWITCH_STANDARD_API(nway_login_function)
 {
 	//最大10个分组	
@@ -355,7 +357,7 @@ done:
 
 	return SWITCH_STATUS_SUCCESS; 
 }
-#define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage:nwaylogout 1000"
+#define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage:nway_logout 1000"
 SWITCH_STANDARD_API(nway_logout_function)
 {
 	//最大10个分组	
@@ -388,7 +390,7 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define NWAY_BUSY_SYNTAX "nway_busy extension \nUsage:nwaybusy 1000"
+#define NWAY_BUSY_SYNTAX "nway_busy extension \nUsage:nway_busy 1000"
 SWITCH_STANDARD_API(nway_busy_function)
 {
 
@@ -420,7 +422,7 @@ done:
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
-#define NWAY_READY_SYNTAX "nway_ready extension \nUsage:nwayready 1000"
+#define NWAY_READY_SYNTAX "nway_ready extension \nUsage:nway_ready 1000"
 SWITCH_STANDARD_API(nway_ready_function)
 {
 
