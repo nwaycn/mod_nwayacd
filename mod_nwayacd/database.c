@@ -194,17 +194,17 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and "
 							"(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') "
 							" and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s' "
-									")) order by c.extension_number limit 1",group_number,group_number);
+							")) order by c.extension_number limit 1",group_number,group_number);
 				}else if(mode == 1 || mode==4){
 					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and "
 							"(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') "
 							"and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'"
-									")) order by random() limit 1",group_number,group_number);
+							")) order by random() limit 1",group_number,group_number);
 				}else if(mode ==2 || mode==5){
 					sprintf(cmd,"select c.extension_number from call_extension c,ext_group e where (c.reg_state='reged' OR c.reg_state='REGED') and "
 							"(c.call_state='ready' OR c.call_state='READY') and (c.seat_state='up' OR c.seat_state='UP') and (c.seat_status='ready' OR c.seat_status='idle') "
 							"and (c.extension_number >e.current_ext_number) and (e.group_number='%s') and (c.extension_number in ( select ext from ext_group_map where ext_group_number='%s'"
-									")) order by c.extension_number limit 1",group_number,group_number);
+							")) order by c.extension_number limit 1",group_number,group_number);
 				}
 				res = PQexec(conn,cmd);
 
@@ -260,7 +260,7 @@ int update_ext_idle(const char* ext){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update extensio to idle failed: %s\n",PQerrorMessage(conn));
-		 
+
 		PQclear(res);
 
 	}
@@ -297,11 +297,11 @@ int check_vip_list(const char* callin_number,const char* group_number){
 	PQclear(res);
 	return return_val;
 }
- 
+
 
 int insert_into_queue(const char* callin_number,const char* group_number){
 	int is_vip=1;
-	
+
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -315,7 +315,7 @@ int insert_into_queue(const char* callin_number,const char* group_number){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "insert record into callin queue failed: %s\n",PQerrorMessage(conn));
-		 
+
 		PQclear(res);
 
 	}
@@ -324,7 +324,7 @@ int insert_into_queue(const char* callin_number,const char* group_number){
 }
 int delete_from_queue(const char* callin_number,const char* group_number){
 	int is_vip=1;
-	
+
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -343,7 +343,7 @@ int delete_from_queue(const char* callin_number,const char* group_number){
 	return return_val;
 }
 int query_vip_callin(char* callin_number,char* group_number){
-	 
+
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
@@ -358,7 +358,7 @@ int query_vip_callin(char* callin_number,char* group_number){
 
 	i = PQntuples(res);
 	t = PQnfields(res);
-	
+
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
 		sprintf(callin_number,"%s",PQgetvalue(res,s,0));
@@ -388,7 +388,7 @@ int query_a_data_from_queue(char* callin_number,char* group_number){
 
 	i = PQntuples(res);
 	t = PQnfields(res);
-	
+
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
 		sprintf(callin_number,"%s",PQgetvalue(res,s,0));

@@ -93,7 +93,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 	int timeout=0;
 	int ret_val =0;
 	if (!zstr(group_name)) {
-	//	group_number = switch_core_session_strdup(session, data);
+		//	group_number = switch_core_session_strdup(session, data);
 
 	}else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
@@ -116,7 +116,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 	}
 	//here to query idle agent in group
 	char ext[20];
-	 
+
 	ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
 	if (ret_val==0){
 		//has an idle agent extension
@@ -302,7 +302,7 @@ done:
 #define NWAY_LOGIN_SYNTAX "nway_login extension group_list\nUsage:nwaylogin 1000 120,119,110"
 SWITCH_STANDARD_API(nway_login_function)
 {
-//最大10个分组	
+	//最大10个分组	
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL, *group_number[10]={0},*mygroup=NULL;
 	int argc = 0, type = 1;
 
@@ -346,7 +346,7 @@ done:
 #define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage:nwaylogout 1000"
 SWITCH_STANDARD_API(nway_logout_function)
 {
-//最大10个分组	
+	//最大10个分组	
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
 	int argc = 0, type = 1;
 
@@ -368,7 +368,7 @@ usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGOUT_SYNTAX);
 
 done:
-	 
+
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -376,7 +376,7 @@ done:
 #define NWAY_BUSY_SYNTAX "nway_busy extension \nUsage:nwaybusy 1000"
 SWITCH_STANDARD_API(nway_busy_function)
 {
- 
+
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
 	int argc = 0, type = 1;
 
@@ -398,14 +398,14 @@ usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_BUSY_SYNTAX);
 
 done:
-	 
+
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 #define NWAY_READY_SYNTAX "nway_ready extension \nUsage:nwayready 1000"
 SWITCH_STANDARD_API(nway_ready_function)
 {
- 
+
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
 	int argc = 0, type = 1;
 
@@ -427,7 +427,7 @@ usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_READY_SYNTAX);
 
 done:
-	 
+
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
