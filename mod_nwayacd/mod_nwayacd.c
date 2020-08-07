@@ -298,6 +298,140 @@ done:
 	return status;
 }
 
+
+#define NWAY_LOGIN_SYNTAX "nwaylogin extension group_list\nUsage:nwaylogin 1000 120,119,110"
+SWITCH_STANDARD_API(nway_login_function)
+{
+//最大10个分组	
+	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL, *group_number[10]={0},*mygroup=NULL;
+	int argc = 0, type = 1;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	extension = argv[1];
+	if (argc<3){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+		goto usage;
+	}
+	mygroup = argv[2];
+	if (zstr(mygroup)){
+		goto usage;
+	}
+	if ((argc = switch_separate_string(mygroup, ',', group_number, (sizeof(group_number) / sizeof(group_number[0])))) < 2) {
+		goto usage;
+	}
+	//按group数量插入座席组与座席对应表
+	for (int i=0;i<argc;i++){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "login extension:%s, group:%s\n", extension,group_number[i]);
+	}
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGIN_SYNTAX);
+
+done:
+	switch_safe_free(mygroup);
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+#define NWAY_LOGOUT_SYNTAX "nwaylogout extension \nUsage:nwaylogout 1000"
+SWITCH_STANDARD_API(nway_logout_function)
+{
+//最大10个分组	
+	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
+	int argc = 0, type = 1;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	extension = argv[1];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "logout extension:%s\n", extension);
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGOUT_SYNTAX);
+
+done:
+	 
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define NWAY_BUSY_SYNTAX "nwaybusy extension \nUsage:nwaybusy 1000"
+SWITCH_STANDARD_API(nway_busy_function)
+{
+ 
+	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
+	int argc = 0, type = 1;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	extension = argv[1];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s busy\n", extension);
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_BUSY_SYNTAX);
+
+done:
+	 
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+#define NWAY_READY_SYNTAX "nwayready extension \nUsage:nwayready 1000"
+SWITCH_STANDARD_API(nway_ready_function)
+{
+ 
+	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL ;
+	int argc = 0, type = 1;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	extension = argv[1];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s ready\n", extension);
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_READY_SYNTAX);
+
+done:
+	 
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 {
 	switch_application_interface_t *app_interface;
@@ -330,6 +464,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 			"nway bridge to a leg uuid ", SAF_NONE);
 
 	SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
+	//迁入 and 绑定座席组
+	SWITCH_ADD_API(api_interface, "nway_login", "nway_login login system and add to group", nway_login_function, NWAY_LOGIN_SYNTAX);
+	//迁出
+	SWITCH_ADD_API(api_interface, "nway_logout", "nway_logout", nway_logout_function, NWAY_LOGOUT_SYNTAX);
+	//置忙
+	SWITCH_ADD_API(api_interface, "nway_busy", "nway_busy it no phone call in", nway_busy_function, NWAY_BUSY_SYNTAX);
+	//置闲,状态为等待来电
+	SWITCH_ADD_API(api_interface, "nway_ready", "nway_ready it wait for phone", nway_ready_function, NWAY_READY_SYNTAX);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
 	return SWITCH_STATUS_SUCCESS;
 }
