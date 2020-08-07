@@ -220,7 +220,7 @@ SWITCH_STANDARD_APP(nway_bridge_function){
 }
 
 
-#define UUID_NWAYACD_SYNTAX "nwayacd uuid group_number"
+#define UUID_NWAYACD_SYNTAX "nwayacd uuid group_number\nusage: nwayacd 1-4-nway-uuid 12345"
 SWITCH_STANDARD_API(uuid_nwayacd_function)
 {
 	switch_core_session_t *rsession = NULL;
@@ -299,7 +299,7 @@ done:
 }
 
 
-#define NWAY_LOGIN_SYNTAX "nwaylogin extension group_list\nUsage:nwaylogin 1000 120,119,110"
+#define NWAY_LOGIN_SYNTAX "nway_login extension group_list\nUsage:nwaylogin 1000 120,119,110"
 SWITCH_STANDARD_API(nway_login_function)
 {
 //最大10个分组	
@@ -343,7 +343,7 @@ done:
 
 	return SWITCH_STATUS_SUCCESS;
 }
-#define NWAY_LOGOUT_SYNTAX "nwaylogout extension \nUsage:nwaylogout 1000"
+#define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage:nwaylogout 1000"
 SWITCH_STANDARD_API(nway_logout_function)
 {
 //最大10个分组	
@@ -373,7 +373,7 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define NWAY_BUSY_SYNTAX "nwaybusy extension \nUsage:nwaybusy 1000"
+#define NWAY_BUSY_SYNTAX "nway_busy extension \nUsage:nwaybusy 1000"
 SWITCH_STANDARD_API(nway_busy_function)
 {
  
@@ -402,7 +402,7 @@ done:
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
-#define NWAY_READY_SYNTAX "nwayready extension \nUsage:nwayready 1000"
+#define NWAY_READY_SYNTAX "nway_ready extension \nUsage:nwayready 1000"
 SWITCH_STANDARD_API(nway_ready_function)
 {
  
@@ -442,7 +442,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 	load_config();
 	if (init_database(globals.dbstring) != 0)
 	{        
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " Connection to database failed: %s\n");
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " Connection to database failed: %s\n");
 
 		return SWITCH_STATUS_FALSE;
 	}

@@ -27,8 +27,9 @@ int init_database(char* dbstr){
 	/* Check to see that the backend connection was successfully made */
 	if (PQstatus(conn) != CONNECTION_OK)
 	{
-		fprintf(stderr, "Connection to database failed: %s",
-				PQerrorMessage(conn));
+		//fprintf(stderr, "Connection to database failed: %s",
+		//		PQerrorMessage(conn));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " Connection to database failed: %s\n",PQerrorMessage(conn));
 		exit_nicely(conn);
 		return -1;
 	}
@@ -50,7 +51,7 @@ int check_blank_list(const char* callin_number,const char* group_number){
 
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "check_blank_list failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return 0;
 	}
@@ -86,7 +87,7 @@ int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* time
 
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_group_call_mode_and_timeout failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return 0;
 	}   
@@ -122,7 +123,7 @@ int get_group_current_ext(const char* group_number,char* ext){
 
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_group_current_ext failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return 0;
 	}   
@@ -151,7 +152,7 @@ int get_last_answer_ext(const char* callin_number,const char* group_number,char*
 
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "get_last_answer_ext failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return 0;
 	}   
@@ -208,7 +209,7 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 				res = PQexec(conn,cmd);
 
 				if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-					fprintf(stderr,"Exec Query Failed!\\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " get_group_idle_ext_first failed: %s\n",PQerrorMessage(conn));
 					PQclear(res);
 					return 0;
 				}   
@@ -239,7 +240,7 @@ int update_ext_busy(const char* ext){
 	return_val = PQresultStatus(res) ;
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
-		fprintf(stderr, "update extensio to busy failed: %s", PQerrorMessage(conn));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update_ext_busy failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 
 	}
@@ -258,7 +259,8 @@ int update_ext_idle(const char* ext){
 	return_val = PQresultStatus(res) ;
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
-		fprintf(stderr, "update extensio to idle failed: %s", PQerrorMessage(conn));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update extensio to idle failed: %s\n",PQerrorMessage(conn));
+		 
 		PQclear(res);
 
 	}
@@ -274,7 +276,7 @@ int check_vip_list(const char* callin_number,const char* group_number){
 	res = PQexec(conn,cmd);
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " check_vip_list failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return PQresultStatus(res);
 	}
@@ -312,7 +314,8 @@ int insert_into_queue(const char* callin_number,const char* group_number){
 	return_val = PQresultStatus(res) ;
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
-		fprintf(stderr, "insert record into callin queue failed: %s", PQerrorMessage(conn));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "insert record into callin queue failed: %s\n",PQerrorMessage(conn));
+		 
 		PQclear(res);
 
 	}
@@ -334,9 +337,7 @@ int delete_from_queue(const char* callin_number,const char* group_number){
 	return_val = PQresultStatus(res) ;
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
-		fprintf(stderr, "delete record from callin queue failed: %s", PQerrorMessage(conn));
-		PQclear(res);
-
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "delete record from callin queue failed: %s\n",PQerrorMessage(conn));
 	}
 	PQclear(res);
 	return return_val;
@@ -350,7 +351,7 @@ int query_vip_callin(char* callin_number,char* group_number){
 	res = PQexec(conn,cmd);
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "query_vip_callin failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return PQresultStatus(res);
 	}
@@ -380,7 +381,7 @@ int query_a_data_from_queue(char* callin_number,char* group_number){
 	res = PQexec(conn,cmd);
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
-		fprintf(stderr,"Exec Query Failed!\\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "query_a_data_from_queue failed: %s\n",PQerrorMessage(conn));
 		PQclear(res);
 		return PQresultStatus(res);
 	}
