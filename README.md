@@ -68,5 +68,30 @@
 
 6.  ext_group_map     座席组和座席对应表，支持多对多
 
+### API说明
+1.  nwayacd uuid group
+
+用于将某个uuid的呼叫按acd规则进行排队
+
+2.  nway_login extension group_list(','分隔)
+
+将某个座席分机绑到某几个组里  如将 1000 绑进 110,119 ,   nway_login 1000 110,119
+
+3.  nway_logout extension
+
+登录座席，清理该座席分机的绑定组关系
+
+4.  nway_busy extension
+
+对座席置忙
+
+5.  nway_ready extension
+
+对座席置闲
+
+###APP说明
+nwayacd group_number
+
+将通话按acd转到某个空闲座席上
 
 
