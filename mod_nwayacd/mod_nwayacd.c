@@ -24,7 +24,10 @@ static struct {
 	switch_memory_pool_t *pool;
 	switch_mutex_t *mutex;
 	unsigned int fs_ver;
-	char dbstring[255];   // read config data when load
+	PGconn   *db_connection;
+	char *db_info;
+	int db_online;
+	//char dbstring[255];   // read config data when load
 
 } globals; 
 
@@ -35,6 +38,19 @@ struct acd_caller {
 };
 
 typedef struct acd_caller acd_caller_t;
+
+inline bool check_pq(){
+	if (!globals.db_online || PQstatus(globals.db_connection) != CONNECTION_OK) {
+		globals.db_connection = PQconnectdb(globals.db_info);
+	}
+
+	if (PQstatus(globals.db_connection) == CONNECTION_OK) {
+		globals.db_online = 1;
+	} else {
+		return false;
+	}
+	return true;
+}
 
 static void acd_get_caller(acd_caller_t *caller, const char *channel_name)
 {
@@ -73,7 +89,8 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
 
 		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
-		update_ext_idle(agent_name);
+		if (check_pq())
+			update_ext_idle(agent_name,globals.db_connection);
 		//需要置闲，同时判断是否被agent接听了，如果是被接听了，则不做处理，如果是没接听，则转下一个座席
 	}
 
@@ -105,19 +122,22 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 		if (!zstr(caller.username))
 		{
 			//here to check black list
-			if (check_blank_list(caller.username,group_number) == 0){
+			if (check_pq()){
+				if (check_blank_list(caller.username,group_number,globals.db_connection) == 0){
 				//
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, this call is not permitted! [%s]\n", caller.username);
 				switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
 				switch_ivr_play_file(session, NULL,BLACKLIST_FILE , NULL);
 				goto end;
 			}
+			}
+			
 		}
 	}
 	//here to query idle agent in group
 	char ext[20];
-
-	ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout);
+	if (!check_pq()) goto end;
+	ret_val = get_group_idle_ext_first(caller.username,group_number,ext,&timeout,globals.db_connection);
 	if (ret_val==0){
 		//has an idle agent extension
 		//采用呼叫后通过uuid转，先注释
@@ -150,7 +170,8 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 		}
 		else {
 			//需要设置该分机为忙
-			update_ext_busy(ext);
+			if (!check_pq()) goto end;
+			update_ext_busy(ext,globals.db_connection);
 			switch_channel_t *channel = switch_core_session_get_channel(new_session);
 			switch_event_t *event;
 			switch_caller_extension_t *extension = NULL;
@@ -183,7 +204,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 		switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
 		switch_ivr_play_file(session, NULL,AGENT_BUSY , NULL);
 		//应把未能呼转的加进排队队列中
-		
+
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s waiting for an idle agent\n", switch_channel_get_name(channel));
 
@@ -285,8 +306,8 @@ static switch_status_t load_config(void)
 			if (!strcasecmp(var, "dbstring")) {
 				if (!zstr(val)) {
 
-					strncpy(globals.dbstring,val,255);
-
+					//strncpy(globals.dbstring,val,255);
+					switch_strdup(globals.db_info,val);
 				}
 			}
 
@@ -301,14 +322,15 @@ done:
 }
 
 
-#define NWAY_LOGIN_SYNTAX "nway_login extension group_list\nUsage:nway_login 1000 120,119,110"
+#define NWAY_LOGIN_SYNTAX "nway_login extension group_list\nUsage: nway_login 1000 120,119,110"
 SWITCH_STANDARD_API(nway_login_function)
 {
 	//最大10个分组	
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL, *group_number[10]={0},*mygroup=NULL;
 	int argc = 0, type = 1;
-
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
 	if (zstr(cmd)) {
+
 		goto usage;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
@@ -317,15 +339,12 @@ SWITCH_STANDARD_API(nway_login_function)
 	}
 
 	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "argc [%d]\n", argc);
 		goto usage;
 	}
-
-	extension = argv[1];
-	if (argc<3){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
-		goto usage;
-	}
-	mygroup = argv[2];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "argc [%d], 0:[%s]\n", argc,argv[0]);
+	extension = argv[0];
+	mygroup = strdup(argv[1]);
 	if (zstr(mygroup)){
 		goto usage;
 	}
@@ -333,7 +352,8 @@ SWITCH_STANDARD_API(nway_login_function)
 		goto usage;
 	}
 	//先要让上线
-	if (nway_agent_online(extension) == 0){
+	if (!check_pq()) goto done;
+	if (nway_agent_online(extension,globals.db_connection) == 0){
 		//这里需要ｅｓｌ事件
 	}else{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extensio and online:%sfailed\n", extension);
@@ -342,7 +362,7 @@ SWITCH_STANDARD_API(nway_login_function)
 
 	for (int i=0;i<argc;i++){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "login extension:%s, group:%s\n", extension,group_number[i]);
-		if (nway_add_to_group(extension,group_number[i]) == 0){
+		if (nway_add_to_group(extension,group_number[i],globals.db_connection) == 0){
 			//esl
 		}else{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extension:%s, group:%s add to group failed\n", extension,group_number[i]);
@@ -350,14 +370,14 @@ SWITCH_STANDARD_API(nway_login_function)
 	}
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGIN_SYNTAX);
-
+	return SWITCH_STATUS_FALSE; 
 done:
 	switch_safe_free(mygroup);
 	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS; 
 }
-#define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage:nway_logout 1000"
+#define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage: nway_logout 1000"
 SWITCH_STANDARD_API(nway_logout_function)
 {
 	//最大10个分组	
@@ -378,7 +398,8 @@ SWITCH_STANDARD_API(nway_logout_function)
 
 	extension = argv[1];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "logout extension:%s\n", extension);
-	if (nway_agent_offline(extension)==0){
+	if (!check_pq()) goto done;
+	if (nway_agent_offline(extension,globals.db_connection)==0){
 		//esl
 	}
 usage:
@@ -411,7 +432,8 @@ SWITCH_STANDARD_API(nway_busy_function)
 
 	extension = argv[1];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s busy\n", extension);
-	if (nway_agent_set_busy(extension) ==0){
+	if (!check_pq()) goto done;
+	if (nway_agent_set_busy(extension,globals.db_connection) ==0){
 		//esl
 	}
 usage:
@@ -443,7 +465,8 @@ SWITCH_STANDARD_API(nway_ready_function)
 
 	extension = argv[1];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s ready\n", extension);
-	if (nway_agent_set_ready(extension) ==0){
+	if (!check_pq()) goto done;
+	if (nway_agent_set_ready(extension,globals.db_connection) ==0){
 		//esl
 	}
 usage:
@@ -462,22 +485,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
+	globals.db_online = 0;
 	load_config();
-	if (init_database(globals.dbstring) != 0)
-	{        
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " Connection to database failed: %s\n");
-
-		return SWITCH_STATUS_FALSE;
+	if (check_pq()){
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection to database failed: %s", PQerrorMessage(globals.db_connection));
+		goto error;
 	}
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
-	unsigned int major = atoi(switch_version_major());
-	unsigned int minor = atoi(switch_version_minor());
-	unsigned int micro = atoi(switch_version_micro());
+	// unsigned int major = atoi(switch_version_major());
+	// unsigned int minor = atoi(switch_version_minor());
+	// unsigned int micro = atoi(switch_version_micro());
 
-	globals.fs_ver = major << 16;
-	globals.fs_ver |= minor << 8;
-	globals.fs_ver |= micro << 4;
+	// globals.fs_ver = major << 16;
+	// globals.fs_ver |= minor << 8;
+	// globals.fs_ver |= micro << 4;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -486,7 +509,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 	SWITCH_ADD_APP(app_interface, "nway_bridge", "nway_bridge", "nway_bridge", nway_bridge_function,
 			"nway bridge to a leg uuid ", SAF_NONE);
 
-	SWITCH_ADD_API(api_interface, "nwayacd", "nwayacd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
+	SWITCH_ADD_API(api_interface, "nwayacd", "nway acd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
 	//迁入 and 绑定座席组
 	SWITCH_ADD_API(api_interface, "nway_login", "nway_login login system and add to group", nway_login_function, NWAY_LOGIN_SYNTAX);
 	//迁出
@@ -498,13 +521,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
 	return SWITCH_STATUS_SUCCESS;
+error:
+    PQfinish(globals.db_connection);
+	globals.db_online = 0;
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd failed\n");
+	return SWITCH_STATUS_FALSE;
 }
 
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nwayacd_shutdown)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " nwayacd_shutdown\n");
-
+	if (PQstatus(globals.db_connection) == CONNECTION_OK) {
+		PQfinish(globals.db_connection);
+	}
 	switch_mutex_destroy(globals.mutex);
 	return SWITCH_STATUS_SUCCESS;
 }

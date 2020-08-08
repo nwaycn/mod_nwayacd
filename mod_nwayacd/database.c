@@ -9,40 +9,17 @@
  */
 
 #include "database.h"
-#include <libpq-fe.h>
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <switch.h>
-PGconn     *conn=NULL;
+ 
 //这里是可以再多加一些其它能力进去，故而只是一句，也用了一个函数
-static void exit_nicely(PGconn *c)
-{
-	PQfinish(c);
-}
-//初始化数据库
-int init_database(char* dbstr){
-	conn = PQconnectdb(dbstr);
 
-	/* Check to see that the backend connection was successfully made */
-	if (PQstatus(conn) != CONNECTION_OK)
-	{
-		//fprintf(stderr, "Connection to database failed: %s",
-		//		PQerrorMessage(conn));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " Connection to database failed: %s\n",PQerrorMessage(conn));
-		exit_nicely(conn);
-		return -1;
-	}
-	return 0;
-}
-//释放数据库
-int release_database(){
-	exit_nicely(conn);
-	return 0;
-}
 
 //验证是不是黑名单里
-int check_blank_list(const char* callin_number,const char* group_number){
+int check_blank_list(const char* callin_number,const char* group_number,PGconn *conn){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
@@ -77,7 +54,7 @@ int check_blank_list(const char* callin_number,const char* group_number){
 }
 
 //查询组的呼叫模式和超时时长
-int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* timeout){
+int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* timeout,PGconn *conn){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
@@ -113,7 +90,7 @@ int get_group_call_mode_and_timeout(const char* group_number,int* mode,int* time
 	return return_val;
 
 }
-int get_group_current_ext(const char* group_number,char* ext){
+int get_group_current_ext(const char* group_number,char* ext,PGconn *conn){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
@@ -142,7 +119,7 @@ int get_group_current_ext(const char* group_number,char* ext){
 	return return_val;
 }
 
-int get_last_answer_ext(const char* callin_number,const char* group_number,char* ext){
+int get_last_answer_ext(const char* callin_number,const char* group_number,char* ext,PGconn *conn){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
@@ -175,16 +152,16 @@ int get_last_answer_ext(const char* callin_number,const char* group_number,char*
 //ext 空闲的座席
 //timeout 要呼叫的超时时长
 //返回值，有空闲的，那么就返回0及ext为空闲座席值
-int get_group_idle_ext_first(const char* callin_number,const char* group_number,char* ext,int* timeout){
+int get_group_idle_ext_first(const char* callin_number,const char* group_number,char* ext,int* timeout,PGconn *conn){
 	//这里查找排队类型，如果是循环排队，以及记忆排队，那先优先检测记录排队，如果该座席忙，则再进行排队类型的排队，而循 环则是
 	//要取出当前排队的分机，再按分机序号进行下一个
 	int mode;
-	int ret_val=get_group_call_mode_and_timeout(group_number,&mode,timeout);
+	int ret_val=get_group_call_mode_and_timeout(group_number,&mode,timeout,conn);
 	if (ret_val == 0 )
 	{
 		if (mode>2){
 			//存在记忆呼叫
-			ret_val =  get_last_answer_ext(callin_number,group_number,ext);
+			ret_val =  get_last_answer_ext(callin_number,group_number,ext,conn);
 			if (ret_val !=0){
 				//需要另外按mode进行数据库查询
 				char cmd[500];
@@ -230,7 +207,7 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 	}
 	return ret_val;
 }
-int update_ext_busy(const char* ext){
+int update_ext_busy(const char* ext,PGconn *conn){
 	PGresult *res;
 	char cmd[4000];
 	int return_val=-1;
@@ -248,7 +225,7 @@ int update_ext_busy(const char* ext){
 	return return_val;
 
 }
-int update_ext_idle(const char* ext){
+int update_ext_idle(const char* ext,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -268,7 +245,7 @@ int update_ext_idle(const char* ext){
 	return return_val;
 }
 //查找是否vip客户，只在排队时有用
-int check_vip_list(const char* callin_number,const char* group_number){
+int check_vip_list(const char* callin_number,const char* group_number,PGconn *conn){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
@@ -299,13 +276,13 @@ int check_vip_list(const char* callin_number,const char* group_number){
 }
 
 
-int insert_into_queue(const char* callin_number,const char* group_number,const char* call_uuid){
+int insert_into_queue(const char* callin_number,const char* group_number,const char* call_uuid,PGconn *conn){
 	int is_vip=1;
 
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
-	if (check_vip_list(callin_number,group_number) != 0){
+	if (check_vip_list(callin_number,group_number,conn) != 0){
 		is_vip = 0;
 	}
 	sprintf(cmd,"INSERT INTO public.callin_queue(callin_number, callin_group, callin_type, call_time,call_uuid)VALUES ('%s','%s',%d,now(),'%s');",callin_number,group_number,is_vip,call_uuid);
@@ -322,7 +299,7 @@ int insert_into_queue(const char* callin_number,const char* group_number,const c
 	PQclear(res);
 	return return_val;
 }
-int delete_from_queue(const char* callin_number,const char* group_number){
+int delete_from_queue(const char* callin_number,const char* group_number,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -337,7 +314,7 @@ int delete_from_queue(const char* callin_number,const char* group_number){
 	PQclear(res);
 	return return_val;
 }
-int query_vip_callin(char* callin_number,char* group_number,char* call_uuid){
+int query_vip_callin(char* callin_number,char* group_number,char* call_uuid,PGconn *conn){
 
 	PGresult *res;
 	char cmd[400];
@@ -366,8 +343,8 @@ int query_vip_callin(char* callin_number,char* group_number,char* call_uuid){
 	return return_val;
 
 }
-int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uuid){
-	if (query_vip_callin(callin_number,group_number) ==0){
+int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uuid,PGconn *conn){
+	if (query_vip_callin(callin_number,group_number,call_uuid,conn) ==0){
 		return 0;
 	}
 	PGresult *res;
@@ -396,7 +373,7 @@ int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uu
 	PQclear(res);
 	return return_val;
 }
-int nway_agent_online(const char* extension){
+int nway_agent_online(const char* extension,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -412,7 +389,7 @@ int nway_agent_online(const char* extension){
 	PQclear(res);
 	return return_val;
 }
-int nway_agent_offline(const char* extension){
+int nway_agent_offline(const char* extension,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -426,16 +403,16 @@ int nway_agent_offline(const char* extension){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_offline up failed: %s\n",PQerrorMessage(conn));
 	}
 	PQclear(res);
-	nway_remove_from_group(extension);
+	nway_remove_from_group(extension,conn);
 	return return_val;
 }
-int nway_add_to_group(const char* extension,const char*  group_number){
+int nway_add_to_group(const char* extension,const char*  group_number,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
 
 	sprintf(cmd,"INSERT INTO public.ext_group_map(id, ext_group_id, ext_group_number, ext)VALUES (0,0,'%s','%s');",group_number,extension);
-
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_add_to_group cmd: %s\n",cmd);
 	res = PQexec(conn, cmd);
 	return_val = PQresultStatus(res) ;
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
@@ -445,7 +422,7 @@ int nway_add_to_group(const char* extension,const char*  group_number){
 	PQclear(res);
 	return return_val;
 }
-int nway_remove_from_group(const char* extension){
+int nway_remove_from_group(const char* extension,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -461,7 +438,7 @@ int nway_remove_from_group(const char* extension){
 	PQclear(res);
 	return return_val;
 }
-int nway_agent_set_busy(const char* extension){
+int nway_agent_set_busy(const char* extension,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
@@ -478,7 +455,7 @@ int nway_agent_set_busy(const char* extension){
 	return return_val;
 }
 
-int nway_agent_set_ready(const char* extension){
+int nway_agent_set_ready(const char* extension,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
