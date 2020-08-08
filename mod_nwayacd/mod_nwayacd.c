@@ -80,13 +80,14 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	const char *agent_name = NULL;
-
+	const char *bill_sec=NULL;
 
 	agent_name = switch_channel_get_variable(channel, AGENT_CALLOUT);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called cc_hook_hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
+	bill_sec = switch_channel_get_variable(channel, "bill_sec");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
 
 	if (state == CS_HANGUP) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended, decreasing external_calls_count", agent_name);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended,bill_sec:%s ", agent_name,bill_sec);
 
 		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
 		if (check_pq())
@@ -98,8 +99,8 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 }
 
 //主执行函数，用于对来电号码进行排队和处理
-switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,switch_stream_handle_t *stream){
-	char *group_number = NULL;
+switch_status_t nwayacd(switch_core_session_t *session, const char* group_number,switch_stream_handle_t *stream){
+	 
 	char* uuid=switch_core_session_get_uuid(session); 
 	const char *dest_num = NULL;
 	char* cmd=NULL;
@@ -109,7 +110,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 	acd_caller_t caller = { 0 }; 
 	int timeout=0;
 	int ret_val =0;
-	if (!zstr(group_name)) {
+	if (!zstr(group_number)) {
 		//	group_number = switch_core_session_strdup(session, data);
 
 	}else {
@@ -150,7 +151,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 		switch_status_t status = SWITCH_STATUS_FALSE;
 		switch_event_t *nway_event = NULL;
 		status = switch_ivr_originate(session, &new_session, &cause, cmd, 0, NULL, NULL, NULL, NULL, nway_event, SOF_NONE, NULL);
-
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "call out string:%s\n",cmd);
 		if (status || !new_session) {
 			const char *fail_str = switch_channel_cause2str(cause);
 			switch_event_t *event;
@@ -167,8 +168,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 			}
 			if (stream)	stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
 			goto end;
-		}
-		else {
+		}else {
 			//需要设置该分机为忙
 			if (!check_pq()) goto end;
 			update_ext_busy(ext,globals.db_connection);
@@ -183,8 +183,8 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "nway_callstatus", "0");
 				switch_event_fire(&event);
 			}
-			switch_channel_set_variable_safe(channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE, "true");
-			switch_channel_set_variable_safe(channel, SWITCH_API_REPORTING_HOOK_VARIABLE, "hangup_handlers");
+			//switch_channel_set_variable_safe(channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE, "true");
+			//switch_channel_set_variable_safe(channel, SWITCH_API_REPORTING_HOOK_VARIABLE, "hangup_handlers");
 
 			if ((extension = switch_caller_extension_new(new_session, "nwaycall", caller.username)) == 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -218,9 +218,9 @@ SWITCH_STANDARD_APP(nwayacd_function){
 	char *group_number = NULL;
 	if (!zstr(data)) {
 		group_number = switch_core_session_strdup(session, data);
-
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "group number:%s\n",group_number);
 	}else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Destination number provided \n");
 		goto end;
 	}
 	nwayacd(session,group_number,NULL);
