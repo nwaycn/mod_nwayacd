@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <switch.h>
- 
+
 //这里是可以再多加一些其它能力进去，故而只是一句，也用了一个函数
 
 
@@ -39,11 +39,11 @@ int check_blank_list(const char* callin_number,const char* group_number,PGconn *
 	char id[20];
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		 
 
-			sprintf(id,"%s",PQgetvalue(res,s,0));
-			return_val = 0;
-		 
+
+		sprintf(id,"%s",PQgetvalue(res,s,0));
+		return_val = 0;
+
 	}
 
 	PQclear(res);
@@ -106,11 +106,11 @@ int get_group_current_ext(const char* group_number,char* ext,PGconn *conn){
 
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-	 
+
 		sprintf(ext,"%s",PQgetvalue(res,s,0));
-	 
+
 		return_val = 0;
-		 
+
 	}  
 	PQclear(res);
 	return return_val;
@@ -135,9 +135,9 @@ int get_last_answer_ext(const char* callin_number,const char* group_number,char*
 
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		 
+
 		sprintf(ext,"%s",PQgetvalue(res,s,0));
-		 
+
 		return_val = 0;
 	}  
 	PQclear(res);
@@ -191,9 +191,9 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 
 				int return_val=-1;
 				for(int s=0; s<i;s++) {
-					 
+
 					sprintf(ext,"%s",PQgetvalue(res,s,0));
-					 
+
 					return_val = 0;
 					break;
 				}  
@@ -254,8 +254,8 @@ int check_vip_list(const char* callin_number,const char* group_number,PGconn *co
 	char id[20];
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-			sprintf(id,"%s",PQgetvalue(res,s,0));
-			return_val = 0;		 
+		sprintf(id,"%s",PQgetvalue(res,s,0));
+		return_val = 0;		 
 	}
 
 	PQclear(res);

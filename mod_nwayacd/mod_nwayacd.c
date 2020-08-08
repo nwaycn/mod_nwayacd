@@ -124,14 +124,14 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_name,s
 			//here to check black list
 			if (check_pq()){
 				if (check_blank_list(caller.username,group_number,globals.db_connection) == 0){
-				//
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, this call is not permitted! [%s]\n", caller.username);
-				switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
-				switch_ivr_play_file(session, NULL,BLACKLIST_FILE , NULL);
-				goto end;
+					//
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sorry, this call is not permitted! [%s]\n", caller.username);
+					switch_ivr_sleep(session, 500, SWITCH_TRUE, NULL);
+					switch_ivr_play_file(session, NULL,BLACKLIST_FILE , NULL);
+					goto end;
+				}
 			}
-			}
-			
+
 		}
 	}
 	//here to query idle agent in group
@@ -279,7 +279,7 @@ done:
 
 	return SWITCH_STATUS_SUCCESS;
 usage:
-    switch_safe_free(mycmd);
+	switch_safe_free(mycmd);
 	stream->write_function(stream, "-USAGE: %s\n", UUID_NWAYACD_SYNTAX);
 	return SWITCH_STATUS_FALSE;
 
@@ -331,7 +331,7 @@ SWITCH_STANDARD_API(nway_login_function)
 	//最大10个分组	
 	char *mycmd = NULL,  *argv[3] = { 0 },  *extension = NULL, *group_number[10]={0},*mygroup=NULL;
 	int argc = 0, type = 1;
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd [%s]\n", cmd);
 	if (zstr(cmd)) {
 
 		goto usage;
@@ -493,7 +493,7 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", NWAY_READY_SYNTAX);
-    switch_safe_free(mycmd);
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -541,9 +541,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd loaded\n");
 	return SWITCH_STATUS_SUCCESS;
 error:
-    PQfinish(globals.db_connection);
+	PQfinish(globals.db_connection);
 	globals.db_online = 0;
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd failed\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, " module nway acd failed\n");
 	return SWITCH_STATUS_FALSE;
 }
 
