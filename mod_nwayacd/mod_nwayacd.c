@@ -262,24 +262,27 @@ SWITCH_STANDARD_API(uuid_nwayacd_function)
 		goto usage;
 	}
 
-	uuid = argv[1];
-	group_number = argv[2];
+	uuid = argv[0];
+	group_number = argv[1];
 	if (uuid && strlen(uuid)>1){
 		if (!(rsession = switch_core_session_locate(uuid))) {
 			stream->write_function(stream, "-ERR Cannot locate session!\n");
 			goto done;
 		}
-		return nwayacd(rsession,group_number,stream);
+		nwayacd(rsession,group_number,stream);
 
 	}
 
-usage:
-	stream->write_function(stream, "-USAGE: %s\n", UUID_NWAYACD_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
+usage:
+    switch_safe_free(mycmd);
+	stream->write_function(stream, "-USAGE: %s\n", UUID_NWAYACD_SYNTAX);
+	return SWITCH_STATUS_FALSE;
+
 }
 
 
@@ -348,15 +351,19 @@ SWITCH_STANDARD_API(nway_login_function)
 	if (zstr(mygroup)){
 		goto usage;
 	}
-	if ((argc = switch_separate_string(mygroup, ',', group_number, (sizeof(group_number) / sizeof(group_number[0])))) < 2) {
+	if ((argc = switch_separate_string(mygroup, ',', group_number, (sizeof(group_number) / sizeof(group_number[0])))) <1) {
 		goto usage;
 	}
 	//先要让上线
 	if (!check_pq()) goto done;
+	//重新注册时需要清空原来的对应关系，用于万一之前没调用登出，引起登入数据太多
+	if (nway_remove_from_group(extension,globals.db_connection) == 0){
+
+	}else switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "remove all ext :%s map info failed\n", extension);
 	if (nway_agent_online(extension,globals.db_connection) == 0){
 		//这里需要ｅｓｌ事件
 	}else{
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extensio and online:%sfailed\n", extension);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extensio and online:%s failed\n", extension);
 	}
 	//按group数量插入座席组与座席对应表
 
@@ -368,14 +375,18 @@ SWITCH_STANDARD_API(nway_login_function)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "login extension:%s, group:%s add to group failed\n", extension,group_number[i]);
 		}
 	}
-usage:
-	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGIN_SYNTAX);
-	return SWITCH_STATUS_FALSE; 
+	goto done;
+
 done:
 	switch_safe_free(mygroup);
 	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS; 
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGIN_SYNTAX);
+	switch_safe_free(mygroup);
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_FALSE; 
 }
 #define NWAY_LOGOUT_SYNTAX "nway_logout extension \nUsage: nway_logout 1000"
 SWITCH_STANDARD_API(nway_logout_function)
@@ -392,23 +403,26 @@ SWITCH_STANDARD_API(nway_logout_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
 		goto usage;
 	}
 
-	extension = argv[1];
+	extension = argv[0];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "logout extension:%s\n", extension);
 	if (!check_pq()) goto done;
 	if (nway_agent_offline(extension,globals.db_connection)==0){
 		//esl
 	}
-usage:
-	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGOUT_SYNTAX);
+
 
 done:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_LOGOUT_SYNTAX);
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_FALSE;
 }
 
 #define NWAY_BUSY_SYNTAX "nway_busy extension \nUsage:nway_busy 1000"
@@ -426,23 +440,26 @@ SWITCH_STANDARD_API(nway_busy_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
 		goto usage;
 	}
 
-	extension = argv[1];
+	extension = argv[0];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s busy\n", extension);
 	if (!check_pq()) goto done;
 	if (nway_agent_set_busy(extension,globals.db_connection) ==0){
 		//esl
 	}
-usage:
-	stream->write_function(stream, "-USAGE: %s\n", NWAY_BUSY_SYNTAX);
+
 
 done:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_BUSY_SYNTAX);
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_FALSE;
 }
 #define NWAY_READY_SYNTAX "nway_ready extension \nUsage:nway_ready 1000"
 SWITCH_STANDARD_API(nway_ready_function)
@@ -459,23 +476,25 @@ SWITCH_STANDARD_API(nway_ready_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) <1) {
 		goto usage;
 	}
 
-	extension = argv[1];
+	extension = argv[0];
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set extension:%s ready\n", extension);
 	if (!check_pq()) goto done;
 	if (nway_agent_set_ready(extension,globals.db_connection) ==0){
 		//esl
 	}
-usage:
-	stream->write_function(stream, "-USAGE: %s\n", NWAY_READY_SYNTAX);
 
 done:
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
+usage:
+	stream->write_function(stream, "-USAGE: %s\n", NWAY_READY_SYNTAX);
+    switch_safe_free(mycmd);
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
@@ -511,9 +530,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nwayacd_load)
 
 	SWITCH_ADD_API(api_interface, "nwayacd", "nway acd", uuid_nwayacd_function, UUID_NWAYACD_SYNTAX);
 	//迁入 and 绑定座席组
-	SWITCH_ADD_API(api_interface, "nway_login", "nway_login login system and add to group", nway_login_function, NWAY_LOGIN_SYNTAX);
+	SWITCH_ADD_API(api_interface, "nway_login", "nway_login agent login system and add to group", nway_login_function, NWAY_LOGIN_SYNTAX);
 	//迁出
-	SWITCH_ADD_API(api_interface, "nway_logout", "nway_logout", nway_logout_function, NWAY_LOGOUT_SYNTAX);
+	SWITCH_ADD_API(api_interface, "nway_logout", "nway_logout an agent", nway_logout_function, NWAY_LOGOUT_SYNTAX);
 	//置忙
 	SWITCH_ADD_API(api_interface, "nway_busy", "nway_busy it no phone call in", nway_busy_function, NWAY_BUSY_SYNTAX);
 	//置闲,状态为等待来电

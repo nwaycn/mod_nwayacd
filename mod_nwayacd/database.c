@@ -23,7 +23,7 @@ int check_blank_list(const char* callin_number,const char* group_number,PGconn *
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='%s' and group_number ='%s';", callin_number ,group_number );
+	sprintf(cmd,"SELECT id  FROM call_blacklist where call_number='%s' and group_number ='%s' limit 1;", callin_number ,group_number );
 	res = PQexec(conn,cmd);
 
 
@@ -39,14 +39,11 @@ int check_blank_list(const char* callin_number,const char* group_number,PGconn *
 	char id[20];
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		for (k = 0; k<t; k++) {
+		 
 
-			sprintf(id,"%s",PQgetvalue(res,s,k));
+			sprintf(id,"%s",PQgetvalue(res,s,0));
 			return_val = 0;
-			break;
-
-		}
-		break;
+		 
 	}
 
 	PQclear(res);
@@ -94,7 +91,7 @@ int get_group_current_ext(const char* group_number,char* ext,PGconn *conn){
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT current_ext_number  FROM ext_group where group_number  ='%s';" ,group_number); 
+	sprintf(cmd,"SELECT current_ext_number  FROM ext_group where group_number  ='%s' limit 1;" ,group_number); 
 	//理论上只有一条
 	res = PQexec(conn,cmd);
 
@@ -109,11 +106,11 @@ int get_group_current_ext(const char* group_number,char* ext,PGconn *conn){
 
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		for (k = 0; k<t; k++) {
-			sprintf(ext,"%s",PQgetvalue(res,s,k));
-		}
+	 
+		sprintf(ext,"%s",PQgetvalue(res,s,0));
+	 
 		return_val = 0;
-		break;
+		 
 	}  
 	PQclear(res);
 	return return_val;
@@ -138,11 +135,10 @@ int get_last_answer_ext(const char* callin_number,const char* group_number,char*
 
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		for (k = 0; k<t; k++) {
-			sprintf(ext,"%s",PQgetvalue(res,s,k));
-		}
+		 
+		sprintf(ext,"%s",PQgetvalue(res,s,0));
+		 
 		return_val = 0;
-		break;
 	}  
 	PQclear(res);
 	return return_val;
@@ -195,9 +191,9 @@ int get_group_idle_ext_first(const char* callin_number,const char* group_number,
 
 				int return_val=-1;
 				for(int s=0; s<i;s++) {
-					for (k = 0; k<t; k++) {
-						sprintf(ext,"%s",PQgetvalue(res,s,k));
-					}
+					 
+					sprintf(ext,"%s",PQgetvalue(res,s,0));
+					 
 					return_val = 0;
 					break;
 				}  
@@ -218,9 +214,7 @@ int update_ext_busy(const char* ext,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update_ext_busy failed: %s\n",PQerrorMessage(conn));
-		PQclear(res);
-
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 
@@ -237,10 +231,7 @@ int update_ext_idle(const char* ext,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update extensio to idle failed: %s\n",PQerrorMessage(conn));
-
-		PQclear(res);
-
-	}
+	}else return_val = 0; 
 	PQclear(res);
 	return return_val;
 }
@@ -249,7 +240,7 @@ int check_vip_list(const char* callin_number,const char* group_number,PGconn *co
 	PGresult *res;
 	char cmd[400];
 	int i = 0,t = 0,s,k;
-	sprintf(cmd,"SELECT id  FROM call_vip_number where phone_number ='%s' and group_number ='%s';" , callin_number ,group_number);
+	sprintf(cmd,"SELECT id  FROM call_vip_number where phone_number ='%s' and group_number ='%s' limit 1;" , callin_number ,group_number);
 	res = PQexec(conn,cmd);
 
 	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
@@ -263,12 +254,8 @@ int check_vip_list(const char* callin_number,const char* group_number,PGconn *co
 	char id[20];
 	int return_val=-1;
 	for(int s=0; s<i;s++) {
-		for (k = 0; k<t; k++) {
-
-			sprintf(id,"%s",PQgetvalue(res,s,k));
-			return_val = 0;
-		}
-		break;
+			sprintf(id,"%s",PQgetvalue(res,s,0));
+			return_val = 0;		 
 	}
 
 	PQclear(res);
@@ -293,9 +280,7 @@ int insert_into_queue(const char* callin_number,const char* group_number,const c
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "insert record into callin queue failed: %s\n",PQerrorMessage(conn));
 
-		PQclear(res);
-
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 }
@@ -310,7 +295,7 @@ int delete_from_queue(const char* callin_number,const char* group_number,PGconn 
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "delete record from callin queue failed: %s\n",PQerrorMessage(conn));
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 }
@@ -337,7 +322,7 @@ int query_vip_callin(char* callin_number,char* group_number,char* call_uuid,PGco
 		sprintf(group_number,"%s",PQgetvalue(res,s,1));	
 		sprintf(call_uuid,"%s",PQgetvalue(res,s,2));	
 		return_val = 0;
-	}
+	} 
 
 	PQclear(res);
 	return return_val;
@@ -368,7 +353,7 @@ int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uu
 		sprintf(group_number,"%s",PQgetvalue(res,s,1));	
 		sprintf(call_uuid,"%s",PQgetvalue(res,s,2));	
 		return_val = 0;
-	}
+	} 
 
 	PQclear(res);
 	return return_val;
@@ -385,6 +370,8 @@ int nway_agent_online(const char* extension,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "extension up failed: %s\n",PQerrorMessage(conn));
+	}else{
+		return_val = 0;
 	}
 	PQclear(res);
 	return return_val;
@@ -401,7 +388,7 @@ int nway_agent_offline(const char* extension,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_offline up failed: %s\n",PQerrorMessage(conn));
-	}
+	}else return_val = 0;
 	PQclear(res);
 	nway_remove_from_group(extension,conn);
 	return return_val;
@@ -418,7 +405,7 @@ int nway_add_to_group(const char* extension,const char*  group_number,PGconn *co
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_add_to_group  failed: %s\n",PQerrorMessage(conn));
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 }
@@ -434,7 +421,7 @@ int nway_remove_from_group(const char* extension,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_remove_from_group up failed: %s\n",PQerrorMessage(conn));
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 }
@@ -450,7 +437,7 @@ int nway_agent_set_busy(const char* extension,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_set_busy failed: %s\n",PQerrorMessage(conn));
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 }
@@ -467,7 +454,7 @@ int nway_agent_set_ready(const char* extension,PGconn *conn){
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_set_ready failed: %s\n",PQerrorMessage(conn));
-	}
+	}else return_val = 0;
 	PQclear(res);
 	return return_val;
 }
