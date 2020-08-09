@@ -228,6 +228,9 @@ CREATE TABLE public.ext_group
   group_number character varying(50), -- 座席组短号
   current_ext_number character varying(50) ,-- 当前组里接听时找到的分机，如果找不到，则再从头开始
   group_call_mode integer DEFAULT 5 ,-- 呼叫模式  ...
+  transfer_ring character varying(255) DEFAULT ''::character varying,
+  black_list_ring character varying(255) DEFAULT ''::character varying,
+  busy_ring character varying(255) DEFAULT ''::character varying,
   group_callout_timeout integer DEFAULT 15 -- 呼叫到每个号码时的超时时长，默认15秒
 )
 WITH (
