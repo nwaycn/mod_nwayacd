@@ -226,7 +226,7 @@ int update_ext_idle(const char* ext,PGconn *conn){
 	int return_val=-1;
 	char cmd[4000];
 
-	sprintf(cmd,"update call_extension set call_state='idle' where extension_number ='%s';",ext);
+	sprintf(cmd,"update call_extension set call_state='ready' where extension_number ='%s';",ext);
 	//fprintf(stderr,cmd);
 	res = PQexec(conn, cmd);
 	return_val = PQresultStatus(res) ;

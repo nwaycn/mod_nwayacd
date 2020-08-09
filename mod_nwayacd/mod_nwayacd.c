@@ -83,15 +83,15 @@ static switch_status_t nway_hook_state_run(switch_core_session_t *session)
 	const char *bill_sec=NULL;
 
 	agent_name = switch_channel_get_variable(channel, AGENT_CALLOUT);
-	bill_sec = switch_channel_get_variable(channel, "bill_sec");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Called hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
+	bill_sec = switch_channel_get_variable(channel, "billsec");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Called hanguphook channel %s with state %s", switch_channel_get_name(channel), switch_channel_state_name(state));
 
 	if (state == CS_HANGUP) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Tracked call for agent %s ended,bill_sec:%s ", agent_name,bill_sec);
-
-		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Tracked call for agent %s ended,bill_sec:%s ", agent_name,bill_sec);
 		if (check_pq())
 			update_ext_idle(agent_name,globals.db_connection);
+		switch_core_event_hook_remove_state_run(session, nway_hook_state_run);
+		
 		//需要置闲，同时判断是否被agent接听了，如果是被接听了，则不做处理，如果是没接听，则转下一个座席
 	}
 
@@ -142,15 +142,15 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_number
 	if (ret_val==0){
 		//has an idle agent extension
 		//采用呼叫后通过uuid转，先注释
-		cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d,origination_caller_id_number=%s}user/%s",
-				timeout,caller.username,ext);
+		cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d,origination_caller_id_number=%s,%s=%s}user/%s",
+				timeout,caller.username,AGENT_CALLOUT,ext,ext);
 		//cmd = switch_mprintf("{ignore_early_media=true,originate_timeout=%d}user/%s &nway_bridge(%s)",timeout,ext,uuid);
 		//switch_api_execute("originate", cmd, NULL, stream);
 		switch_core_session_t *new_session = NULL;
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		switch_status_t status = SWITCH_STATUS_FALSE;
 		switch_event_t *nway_event = NULL;
-		status = switch_ivr_originate(session, &new_session, &cause, cmd, 0, NULL, NULL, NULL, NULL, nway_event, SOF_NONE, NULL);
+		status = switch_ivr_originate(NULL, &new_session, &cause, cmd, 0, NULL, NULL, NULL, NULL, nway_event, SOF_NONE, NULL);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "call out string:%s\n",cmd);
 		if (status || !new_session) {
 			const char *fail_str = switch_channel_cause2str(cause);
@@ -170,6 +170,10 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_number
 			goto end;
 		}else {
 			//需要设置该分机为忙
+			switch_channel_t *peer_channel = switch_core_session_get_channel(new_session);
+			switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+			switch_ivr_multi_threaded_bridge(session, new_session, NULL, NULL, NULL);
+			//switch_ivr_signal_bridge(session,new_session);
 			if (!check_pq()) goto end;
 			update_ext_busy(ext,globals.db_connection);
 			switch_channel_t *channel = switch_core_session_get_channel(new_session);
