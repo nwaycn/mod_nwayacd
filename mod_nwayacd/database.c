@@ -209,13 +209,29 @@ int update_ext_busy(const char* ext,PGconn *conn){
 	PGresult *res;
 	char cmd[4000];
 	int return_val=-1;
-	sprintf(cmd,"update call_extension set call_state='talking' where extension_number ='%s';",ext);
+	sprintf(cmd,"update call_extension set call_state='ring' where extension_number ='%s';",ext);
 	//fprintf(stderr,cmd);
 	res = PQexec(conn, cmd);
 	return_val = PQresultStatus(res) ;
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update_ext_busy failed: %s\n",PQerrorMessage(conn));
+	}else return_val = 0;
+	PQclear(res);
+	return return_val;
+
+}
+int update_ext_talking(const char* ext,PGconn *conn){
+	PGresult *res;
+	char cmd[4000];
+	int return_val=-1;
+	sprintf(cmd,"update call_extension set call_state='talking' where extension_number ='%s';",ext);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " update_ext_talking failed: %s\n",PQerrorMessage(conn));
 	}else return_val = 0;
 	PQclear(res);
 	return return_val;
@@ -264,13 +280,37 @@ int check_vip_list(const char* callin_number,const char* group_number,PGconn *co
 	return return_val;
 }
 
+int query_uuid_from_queue(const char* call_uuid,PGconn * conn){
+	PGresult *res;
+	char cmd[400];
+	int i = 0,t = 0,s,k;
+	sprintf(cmd,"SELECT id  FROM callin_queue where call_uuid ='%s';" , call_uuid);
+	res = PQexec(conn,cmd);
 
+	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, " check_vip_list failed: %s\n",PQerrorMessage(conn));
+		PQclear(res);
+		return PQresultStatus(res);
+	}
+
+	i = PQntuples(res);
+	t = PQnfields(res);
+	char id[20];
+	int return_val=-1;
+	for(int s=0; s<i;s++) {
+		sprintf(id,"%s",PQgetvalue(res,s,0));
+		return_val = 0;		 
+	}
+
+	PQclear(res);
+	return return_val;
+}
 int insert_into_queue(const char* callin_number,const char* group_number,const char* call_uuid,PGconn *conn){
-	int is_vip=1;
-
+	int is_vip = 1;
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
+	if (query_uuid_from_queue(call_uuid,conn) == 0) return 0;
 	if (check_vip_list(callin_number,group_number,conn) != 0){
 		is_vip = 0;
 	}
@@ -301,6 +341,23 @@ int delete_from_queue(const char* callin_number,const char* group_number,PGconn 
 	PQclear(res);
 	return return_val;
 }
+
+int delete_from_queue_with_uuid(const char* uuid,PGconn *conn){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+	sprintf(cmd,"delete from callin_queue where call_uuid='%s' ;",uuid);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "delete record from callin queue failed: %s\n",PQerrorMessage(conn));
+	}else return_val = 0;
+	PQclear(res);
+	return return_val;
+}
+
 int query_vip_callin(char* callin_number,char* group_number,char* call_uuid,PGconn *conn){
 
 	PGresult *res;
@@ -448,7 +505,6 @@ int nway_agent_set_ready(const char* extension,PGconn *conn){
 	PGresult *res;
 	int return_val=-1;
 	char cmd[4000];
-
 	sprintf(cmd,"update call_extension set seat_status='idle',call_state='ready' where extension_number='%s';",extension);
 	//fprintf(stderr,cmd);
 	res = PQexec(conn, cmd);
@@ -457,6 +513,48 @@ int nway_agent_set_ready(const char* extension,PGconn *conn){
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "nway_agent_set_ready failed: %s\n",PQerrorMessage(conn));
 	}else return_val = 0;
+	PQclear(res);
+	return return_val;
+}
+int insert_remember_cdr(const char* group_name,const char* caller,const ext,PGconn* conn){
+	PGresult *res;
+	int return_val=-1;
+	char cmd[4000];
+	sprintf(cmd,"insert into cf_call_remember(id ,call_number ,agent_number ,insert_time ,group_number )VALUES(0,'%s','%s',now(),'%s');",caller,ext,group_name);
+	//fprintf(stderr,cmd);
+	res = PQexec(conn, cmd);
+	return_val = PQresultStatus(res) ;
+	if (PQresultStatus(res) != PGRES_COMMAND_OK)
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "insert_remember_cdr failed: %s\n",PQerrorMessage(conn));
+	}else return_val = 0;
+	PQclear(res);
+	return return_val;
+}
+int query_group_params(const char* group_number,char* black_ring,char* transfer_ring,char* busy_ring,PGconn * conn){
+	PGresult *res;
+	char cmd[400];
+	int i = 0,t = 0,s,k;
+	sprintf(cmd,"SELECT transfer_ring,black_list_ring,busy_ring from ext_group where group_number=‘%s';",group_number);
+	res = PQexec(conn,cmd);
+
+	if(  PQresultStatus(res)  !=  PGRES_TUPLES_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "query_group_params failed: %s\n",PQerrorMessage(conn));
+		PQclear(res);
+		return PQresultStatus(res);
+	}
+
+	i = PQntuples(res);
+	t = PQnfields(res);
+
+	int return_val=-1;
+	for(int s=0; s<i;s++) {
+		sprintf(transfer_ring,"%s",PQgetvalue(res,s,0));
+		sprintf(black_ring,"%s",PQgetvalue(res,s,1));	
+		sprintf(busy_ring,"%s",PQgetvalue(res,s,2));	
+		return_val = 0;
+	} 
+
 	PQclear(res);
 	return return_val;
 }
