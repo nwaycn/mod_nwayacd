@@ -19,6 +19,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nwayacd_shutdown);
 SWITCH_MODULE_DEFINITION(mod_nwayacd, mod_nwayacd_load, mod_nwayacd_shutdown, NULL);
 #define BLACKLIST_FILE "/home/blacklist.wav"
 #define AGENT_BUSY "/home/busy.wav"
+#define AGENT_TRANSFER "/home/transfer.wav"
 static struct {
 
 	switch_memory_pool_t *pool;
@@ -37,8 +38,19 @@ struct acd_caller {
 	int caller_type;
 };
 
-typedef struct acd_caller acd_caller_t;
+struct acd
+{
+	/* data */
+	char* group_name;
+	int group_mode;
+	char *black_ring;
+	char *transfer_ring;
+	char *busy_ring;
+	int play_state;  //0未播放，1正在放音中
+};
 
+typedef struct acd_caller acd_caller_t;
+typedef struct acd acd_t;
 inline bool check_pq(){
 	if (!globals.db_online || PQstatus(globals.db_connection) != CONNECTION_OK) {
 		globals.db_connection = PQconnectdb(globals.db_info);
