@@ -22,11 +22,15 @@ extern "C" {
 	int get_group_current_ext(const char* group_number,char* ext,PGconn *conn);
 	int get_group_idle_ext_first(const char* callin_number,const char* group_number,char* ext,int* timeout,PGconn *conn);
 	int update_ext_busy(const char* ext,PGconn *conn);
+	int update_ext_talking(const char* ext,PGconn *conn);
 	int update_ext_idle(const char*  ext,PGconn *conn);
+	//如果是属于记忆呼叫，则在接通后挂机时，写入记忆表中
+	int insert_remember_cdr(const char* group_name,const char* caller,const ext,PGconn* conn);
 	int check_vip_list(const char* callin_number,const char* group_number,PGconn *conn);
 	//插入一个队列排队，由插入的同时判断是不是vip
 	int insert_into_queue(const char* callin_number,const char* group_number,const char* call_uuid,PGconn *conn);
 	int delete_from_queue(const char* callin_number,const char* group_number,PGconn *conn);
+	int delete_from_queue_with_uuid(const char* uuid,PGconn *conn);
 	//从队列中取出一个呼入号码和组，内部进行判断是vip优先，先进 先出
 	int query_a_data_from_queue(char* callin_number,char* group_number,char* call_uuid,PGconn *conn);
 	// 上线
@@ -41,6 +45,8 @@ extern "C" {
 	int nway_agent_set_busy(const char* extension,PGconn *conn);
 	//设置闲可接电话
 	int nway_agent_set_ready(const char* extension,PGconn *conn);
+	//查找组的彩铃配置
+	int query_group_params(const char* group_number,char* black_ring,char* transfer_ring,char* busy_ring,PGconn * conn);
 	//i nt 
 #ifdef __cplusplus  
 }  
