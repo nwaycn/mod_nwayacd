@@ -51,7 +51,45 @@ inline bool check_pq(){
 	}
 	return true;
 }
+//处理排队信息，每秒处理一次
+void *SWITCH_THREAD_FUNC queue_process_thread_run(switch_thread_t *thread, void *obj){
+	//
+	while (globals.running == 1) {
+		char callin_number[50]={0};
+		char call_group[50]={0};
+		char uuid[80]={0};
+		//取一个正在排队的信息，然后进行呼叫，当这个呼叫如果挂机需要从排队队列中删除，如果呼叫了另一个分机，也需要从排队中删除
+		if (!check_pq())
+		{
+			switch_yield(1000000);
+			continue;
 
+		} 
+		if (query_a_data_from_queue(callin_number,call_group,uuid,globals.db_connection) == 0){
+			//认为是有排队的
+			switch_core_session_t *session = NULL;
+			if (!(session = switch_core_session_locate(uuid))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "caller session can not find\n ");
+				//这里需要清理一下了
+				delete_from_queue_with_uuid(uuid,globals.db_connection);
+			}else	nwayacd(session,call_group,NULL);
+		}
+
+		switch_yield(1000000);
+
+	}
+}
+void queue_process_thread_start(void)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+ 
+	switch_threadattr_create(&thd_attr, globals.pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
+	switch_thread_create(&thread, thd_attr, queue_process_thread_run, NULL, globals.pool);
+}
 static void acd_get_caller(acd_caller_t *caller, const char *channel_name)
 {
 	char *p;
