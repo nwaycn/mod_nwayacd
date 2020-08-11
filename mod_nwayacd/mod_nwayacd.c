@@ -285,7 +285,7 @@ end:
 				switch_core_file_close(&play_fh);
 				free(play_buf);
 			}
-			//switch_core_session_rwunlock(session);
+			switch_core_session_rwunlock(session);
 		}
 
 	}
@@ -443,7 +443,7 @@ static switch_status_t nway_hook_state_run_a(switch_core_session_t *session)
 			else
 				switch_ivr_play_file(session, NULL,AGENT_BUSY , NULL);
 		}
-		//switch_core_session_rwunlock(session);
+		switch_core_session_rwunlock(session);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -577,7 +577,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_number
 
 			switch_ivr_multi_threaded_bridge(session, new_session, NULL, NULL, NULL);
 			if (stream)	stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(new_session));
-			//switch_core_session_rwunlock(new_session);
+			switch_core_session_rwunlock(new_session);
 		}
 		goto end;
 
@@ -617,7 +617,7 @@ switch_status_t nwayacd(switch_core_session_t *session, const char* group_number
 end:
 	switch_safe_free(cmd);
 	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
-	//switch_core_session_rwunlock(session);
+	switch_core_session_rwunlock(session);
 	return SWITCH_STATUS_SUCCESS;
 }
 
