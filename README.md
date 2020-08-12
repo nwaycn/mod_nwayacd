@@ -94,4 +94,48 @@ nwayacd group_number
 
 将通话按acd转到某个空闲座席上
 
+#### ESL事件说明
+
+ESL的实现主要是在以下两个函数来推出
+
+···
+
+static void push_event(const char* caller,const char* group_number,const char* extension,const char* status){
+	switch_event_t *event;
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, QUEUE_INFO) == SWITCH_STATUS_SUCCESS) {
+		switch_time_t nway_time = switch_micro_time_now() / 1000000;
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLIN, caller);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_CALLOUT, extension); 
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_GROUP, group_number); 
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, AGENT_STATUS,status);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, QUEUE_TIME, "%" SWITCH_TIME_T_FMT, nway_time);
+		switch_event_fire(&event);
+	}
+}
+static void push_queue_event(const char* caller,const char* group_number,const char* extension,const char* uuid,const char* status){
+
+
+	switch_event_t *event;
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AGENT_INFO) == SWITCH_STATUS_SUCCESS) {
+		switch_time_t nway_time = switch_micro_time_now() / 1000000;
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, QUEUE_CALLER, caller);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, QUEUE_EXTENSION, extension); 
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, QUEUE_UUID, uuid); 
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, QUEUE_GROUP, group_number); 
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, QUEUE_OPERATE,status);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, NWAY_TIME, "%" SWITCH_TIME_T_FMT, nway_time);
+		switch_event_fire(&event);
+	}
+}
+···
+函数push_evnet中推送的status有以下，监听的消息为：nway::info
+hangup
+callout
+noanswer
+answered
+
+函数push_queue_event中推送的status有以下，监听的消息为：nway::queue
+nway_queue_add
+nway_queue_remove
 
