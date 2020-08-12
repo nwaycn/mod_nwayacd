@@ -1,5 +1,17 @@
 <configuration name="nwayacd.conf" description="nway acd control module for FreeSWITCH">
   <settings>
     <param name="dbstring" value="user=postgres dbname=records password=Nway2017 host=127.0.0.1 port=5432 sslmode=disable"/> 
+    <param name="jn-prefix" value="/home/voices/prefix.wav"/> 
+    <param name="jn-suffix" value="/home/voices/suffix.wav"/> 
+    <param name="jn-0" value="/home/voices/0.wav"/> 
+    <param name="jn-1" value="/home/voices/1.wav"/> 
+    <param name="jn-2" value="/home/voices/2.wav"/> 
+    <param name="jn-3" value="/home/voices/3.wav"/> 
+    <param name="jn-4" value="/home/voices/4.wav"/> 
+    <param name="jn-5" value="/home/voices/5.wav"/> 
+    <param name="jn-6" value="/home/voices/6.wav"/> 
+    <param name="jn-7" value="/home/voices/7.wav"/> 
+    <param name="jn-8" value="/home/voices/8.wav"/> 
+    <param name="jn-9" value="/home/voices/9.wav"/> 
   </settings>
 </configuration>
