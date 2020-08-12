@@ -1,3 +1,5 @@
+English:  https://github.com/nwaycn/mod_nwayacd/blob/master/README.en.md
+
 # mod_nwayacd
 作为呼叫中心用的，座席分配模块，适用于呼入排队、预测式外呼、以及其它一些外呼场景！
 #### 介绍
