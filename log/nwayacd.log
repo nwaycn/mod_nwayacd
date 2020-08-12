@@ -100,19 +100,7 @@ nway_callin: 1002
 nway_callout: 1000
 nway_group: 110
 nway_callstatus: noanswer
-FreeSWITCH-IPv6: %3A%3A1
-Event-Date-Local: 2020-08-12%2016%3A24%3A20
-Event-Date-GMT: Wed,%2012%20Aug%202020%2008%3A24%3A20%20GMT
-Event-Date-Timestamp: 1597220660230191
-Event-Calling-File: mod_nwayacd.c
-Event-Calling-Function: push_event
-Event-Calling-Line-Number: 356
-Event-Sequence: 1180
-nway_callin: 1002
-nway_callout: 1000
-nway_group: 110
-nway_callstatus: callout
-nway_queue_time: 1597220660
+nway_queue_time: 1597220663
 
 
 Event-Subclass: nway%3A%3Aqueue
@@ -126,11 +114,11 @@ Event-Date-Local: 2020-08-12%2016%3A24%3A23
 Event-Date-GMT: Wed,%2012%20Aug%202020%2008%3A24%3A23%20GMT
 Event-Date-Timestamp: 1597220663830218
 Event-Calling-File: mod_nwayacd.c
-Event-Calling-Function: push_event
-Event-Calling-Line-Number: 356
-Event-Sequence: 1199
-nway_callin: 1002
-nway_callout: 1000
-nway_group: 110
-nway_callstatus: noanswer
-nway_queue_time: 1597220663
+Event-Calling-Function: push_queue_event
+Event-Calling-Line-Number: 370
+Event-Sequence: 1203
+nway_queue_caller: 1002
+nway_queue_uuid: 384c3a80-dc75-11ea-a20e-f34b5565f25a
+nway_queue_group: 110
+nway_queue_operate: nway_queue_add
+nway_status_time: 1597220663
