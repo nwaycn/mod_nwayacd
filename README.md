@@ -100,6 +100,8 @@ ESL的实现主要是在以下两个函数来推出
 
 ···
 
+
+```
 static void push_event(const char* caller,const char* group_number,const char* extension,const char* status){
 	switch_event_t *event;
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, QUEUE_INFO) == SWITCH_STATUS_SUCCESS) {
@@ -112,6 +114,10 @@ static void push_event(const char* caller,const char* group_number,const char* e
 		switch_event_fire(&event);
 	}
 }
+```
+
+
+```
 static void push_queue_event(const char* caller,const char* group_number,const char* extension,const char* uuid,const char* status){
 
 
@@ -128,14 +134,23 @@ static void push_queue_event(const char* caller,const char* group_number,const c
 		switch_event_fire(&event);
 	}
 }
+```
+
 ···
+
 函数push_evnet中推送的status有以下，监听的消息为：nway::info
+
 hangup
+
 callout
+
 noanswer
+
 answered
 
 函数push_queue_event中推送的status有以下，监听的消息为：nway::queue
+
 nway_queue_add
+
 nway_queue_remove
 
